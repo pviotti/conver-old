@@ -9,7 +9,6 @@
 -export([init/1, handle_call/3, handle_cast/2,
   handle_info/2, code_change/3, terminate/2]).
 
--define(MAX_OP_LATENCY, 2500).  % max operation latency
 -define(MAX_OP_INTERVAL, 1500). % max inter-operation interval
 -define(MAX_OPERATIONS, 10).    % max number of operations
 -define(READ_PROBABILITY, 3).   % 1 out of X is a read
@@ -49,6 +48,7 @@ handle_cast(_Message, S) ->
 handle_info(timeout, S = #state{num_op=0}) ->
   {stop, normal, S};
 handle_info(timeout, S = #state{id=N, num_op=NumOp, ops=Ops}) ->
+  StartTime = erlang:monotonic_time(),
   case random:uniform(?READ_PROBABILITY) of
     1 ->
       OpType = read,
@@ -57,8 +57,6 @@ handle_info(timeout, S = #state{id=N, num_op=NumOp, ops=Ops}) ->
       OpType = write,
       io:format("Client ~s writes.~n",[N])
   end,
-  StartTime = erlang:monotonic_time(),
-  timer:sleep(random:uniform(?MAX_OP_LATENCY)), % XXX call client
   EndTime = erlang:monotonic_time(),
   %OpLatency = EndTime - StartTime,
   StateNew=S#state{num_op=(NumOp-1), ops = [#op{op_type=OpType,
