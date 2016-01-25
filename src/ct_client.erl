@@ -15,7 +15,11 @@
 -define(READ_PROBABILITY, 3).   % 1 out of X is a read
 
 -type op_type() :: read | write.
--record(op, {op_type ::op_type(), duration :: non_neg_integer()}).
+-record(op, {op_type :: op_type(),
+  start_time :: integer(),
+  end_time :: integer(),
+  result
+  }).
 -type op() :: #op{}.
 -record(state, {id="", num_op, ops=[] :: [op()]}).
 
@@ -29,9 +33,7 @@ stop(Id) ->
 % Functions called by gen_server
 init([Id]) ->
   process_flag(trap_exit, true), % To know when the parent shuts down
-  %% Sets a seed for random number generation for the life of the process
-  %% uses the current time to do it. Unique value guaranteed by now()
-  random:seed(now()),
+  random:seed(erlang:timestamp()), % To do once per process
   Timeout = random:uniform(?MAX_OP_INTERVAL),
   NumOp = random:uniform(?MAX_OPERATIONS),
   io:format("Client ~s, initialized.~n", [Id]),
@@ -60,9 +62,12 @@ handle_info(timeout, S = #state{id=N, num_op=NumOp, ops=Ops}) ->
       OpType = write,
       io:format("Client ~s writes.~n",[N])
   end,
-  OpLatency = random:uniform(?MAX_OP_LATENCY),
-  timer:sleep(OpLatency),
-  StateNew=S#state{num_op=(NumOp-1), ops = [#op{op_type=OpType, duration=OpLatency} | Ops]},
+  StartTime = erlang:monotonic_time(),
+  timer:sleep(random:uniform(?MAX_OP_LATENCY)), % XXX call client
+  EndTime = erlang:monotonic_time(),
+  %OpLatency = EndTime - StartTime,
+  StateNew=S#state{num_op=(NumOp-1), ops = [#op{op_type=OpType,
+    start_time = StartTime, end_time = EndTime} | Ops]},
   Timeout = random:uniform(?MAX_OP_INTERVAL),
   {noreply, StateNew, Timeout};
 handle_info(_Message, S) ->
