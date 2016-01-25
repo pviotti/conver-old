@@ -1,11 +1,11 @@
-%%  [ct_client:start(list_to_atom(X))|| X <- [[Y] || Y <- "abcde"]].
+%%  [ct_tester:start(list_to_atom(X))|| X <- [[Y] || Y <- "abcde"]].
 
 -module(ct_tester).
 -compile([debug_info]).
 
 -behavior(gen_server).
 
--export([start/1, stop/1]).
+-export([start/1]).
 -export([init/1, handle_call/3, handle_cast/2,
   handle_info/2, code_change/3, terminate/2]).
 
@@ -27,20 +27,15 @@
 start(Id) when is_atom(Id) ->
   gen_server:start({local, Id}, ?MODULE, [Id], []).
 
-stop(Id) ->
-  gen_server:call(Id, stop).
-
 % Functions called by gen_server
 init([Id]) ->
   process_flag(trap_exit, true), % To know when the parent shuts down
   random:seed(erlang:timestamp()), % To do once per process
   Timeout = random:uniform(?MAX_OP_INTERVAL),
   NumOp = random:uniform(?MAX_OPERATIONS),
-  io:format("Client ~s, initialized.~n", [Id]),
+  io:format("Client ~s initialized.~n", [Id]),
   {ok, #state{id=Id, num_op=NumOp, ops=[]}, Timeout}.
 
-handle_call(stop, _From, S=#state{}) ->
-  {stop, normal, ok, S};
 handle_call(_Message, _From, S) ->
   io:format("Client ~s received a call: ~s.~n",[S#state.id,_Message]),
   Timeout = random:uniform(?MAX_OP_INTERVAL),

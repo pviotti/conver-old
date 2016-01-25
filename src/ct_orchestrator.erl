@@ -1,24 +1,28 @@
 -module(ct_orchestrator).
 -compile([debug_info]).
 
--export([run/0,loop/1]).
+-export([run/1]).
 
 
-run() ->
+run(Num) ->
+  AtomIds = [list_to_atom([X]) || X <- lists:seq($a,$a+Num)],
+  TesterPids = proplists:get_all_values(ok,
+    [ct_tester:start(X) || X <- AtomIds]),
   process_flag(trap_exit, true),
-  {ok, Pid} = ct_tester:start(a),
-  erlang:monitor(process, Pid),
-  loop(ok).
+  lists:map(fun(X) -> erlang:monitor(process, X) end, TesterPids),
+  loop(Num).
 
 
-loop(State) ->
+loop(Num) ->
   receive
     {'DOWN', Ref, process, Pid, Reason} ->
-      io:format("Process ~p (~p) terminated message: ~p~n", [Ref,Pid,Reason]);
-    code_change ->
-      ok;
+      io:format("Process ~p (~p) terminated message: ~p~n", [Ref,Pid,Reason]),
+      case Num of
+        1 -> io:format("Testcase terminated.~n");
+        _ -> loop(Num-1)
+      end;
     Unknown ->
-      io:format("Unknown message: ~p~n",[Unknown]),
-      loop(State)
+      io:format("Received message: ~p~n",[Unknown]),
+      loop(Num)
   end.
 
