@@ -3,6 +3,8 @@
 -module(ct_tester).
 -compile([debug_info]).
 
+-include("ct_records.hrl").
+
 -behavior(gen_server).
 
 -export([start/2]).
@@ -15,18 +17,9 @@
 -define(LOG(X), true).
 -endif.
 
--define(MAX_OP_INTERVAL, 1500). % max inter-operation interval
+-define(MAX_OP_INTERVAL, 1000). % max inter-operation interval
 -define(MAX_OPERATIONS, 10).    % max number of operations
 -define(READ_PROBABILITY, 2).   % 1 out of X is a read
-
--type op_type() :: read | write.
--record(op, {op_type :: op_type(),
-  start_time :: integer(),
-  end_time :: integer(),
-  result
-  }).
--type op() :: #op{}.
--record(state, {id="", store, num_op, ops=[] :: [op()]}).
 
 % External API
 start(Id, Store) when is_atom(Id), is_atom(Store) ->

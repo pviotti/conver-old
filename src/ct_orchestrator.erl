@@ -15,24 +15,27 @@ run(Num, Store) ->
 
   % Start testers
   AtomIds = [list_to_atom([X]) || X <- lists:seq($a,$a+Num-1)],
+  StartTime = erlang:monotonic_time(),
   TesterPids = proplists:get_all_values(ok,
     [ct_tester:start(X, StoreModule) || X <- AtomIds]),
   process_flag(trap_exit, true),
   lists:map(fun(X) -> erlang:monitor(process, X) end, TesterPids),
-  loop(Num).
+  loop(Num,StartTime).
 
 
-loop(Num) ->
+loop(Num,StartTime) ->
   receive
     {'DOWN', Ref, process, Pid, Reason} ->
       io:format("Process ~p (~p) terminated, reason: ~p~n", [Ref,Pid,Reason]),
       case Num of
         1 ->
-          io:format("Testcase terminated. Results: ~n~p~n", [ets:tab2list(ops_db)]);
+          EndTime = erlang:monotonic_time(),
+          io:format("Testcase terminated. Results: ~n~p~n", [ets:tab2list(ops_db)]),
+          ct_vis:draw_execution(ets:tab2list(ops_db), [StartTime,EndTime]);
         _ ->
-          loop(Num-1)
+          loop(Num-1,StartTime)
       end;
     Unknown ->
       io:format("Received message: ~p~n",[Unknown]),
-      loop(Num)
+      loop(Num,StartTime)
   end.

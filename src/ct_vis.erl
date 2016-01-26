@@ -1,7 +1,10 @@
 -module(ct_vis).
 
+-include("ct_records.hrl").
+
 %% API
--export([draw/0]).
+-export([draw_execution/2]).
+%-compile(export_all).
 
 
 draw() ->
@@ -47,5 +50,46 @@ draw() ->
   egd:text(Im, {round(100 - W*Length/2), 200 - H - 5}, Font, String, Black),
 
   egd:save(egd:render(Im, png), "test4.png"),
-
   egd:destroy(Im).
+
+
+draw_execution(Ops, [StartTime, EndTime]) ->
+  W = 1024,
+  H = 768,
+
+  HMargin = trunc(W/20),
+  VMargin = trunc(H/40),
+  OpHeight = trunc(H/40),
+
+  NProc = length(Ops),
+  TotTime = EndTime - StartTime,
+  LineLength = W - (HMargin * 2),
+
+  FScaleTime = fun(X) -> trunc((LineLength * X)/TotTime + HMargin) end,
+
+  Im = egd:create(W,H),
+
+  OpsA = element(2, hd(Ops)),
+  OpATimes = get_scaled_xs(FScaleTime, StartTime, OpsA, []),
+  io:format("~p~n",[OpATimes]),
+
+  [egd:rectangle(Im,
+    {X1,trunc(H/(2*NProc)+VMargin)}, {X2,trunc(H/(2*NProc)+VMargin-OpHeight)},
+    egd:color(black)) ||
+    {X1,X2} <- OpATimes],
+
+  % Processes lines
+  [egd:line(Im,
+    {HMargin, trunc(H/(2*NProc)+(X-1)*(H/NProc)+VMargin)},
+    {W-HMargin, trunc(H/(2*NProc)+(X-1)*(H/NProc)+VMargin)},
+    egd:color(black))
+    || X <- lists:seq(1,NProc)],
+
+  egd:save(egd:render(Im, png), "proc.png"),
+  egd:destroy(Im).
+
+
+get_scaled_xs(FScaleTime, StartTime, [], Acc) -> Acc;
+get_scaled_xs(FScaleTime, StartTime, [H|T], Acc) ->
+  Op = {FScaleTime(H#op.start_time - StartTime), FScaleTime(H#op.end_time - StartTime)},
+  get_scaled_xs(FScaleTime, StartTime, T, [Op|Acc]).
