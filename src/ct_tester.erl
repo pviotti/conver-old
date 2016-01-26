@@ -9,9 +9,15 @@
 -export([init/1, handle_call/3, handle_cast/2,
   handle_info/2, code_change/3, terminate/2]).
 
+-ifdef(debug).  % FIXME
+-define(LOG(X), io:format("[~p,~p]: ~p~n", [?MODULE,?LINE,X])).
+-else.
+-define(LOG(X), true).
+-endif.
+
 -define(MAX_OP_INTERVAL, 1500). % max inter-operation interval
 -define(MAX_OPERATIONS, 10).    % max number of operations
--define(READ_PROBABILITY, 3).   % 1 out of X is a read
+-define(READ_PROBABILITY, 2).   % 1 out of X is a read
 
 -type op_type() :: read | write.
 -record(op, {op_type :: op_type(),
@@ -50,7 +56,8 @@ handle_info(timeout, S = #state{id=N, num_op=NumOp, ops=Ops}) ->
       io:format("Client ~s reads.~n",[N]);
     _ ->
       OpType = write,
-      Res = erlang:apply(S#state.store, write, [key, value]), % XXX unique value
+      Res = erlang:apply(S#state.store, write,
+        [key, erlang:unique_integer([monotonic,positive])]), % unique value, monotonic
       io:format("Client ~s writes.~n",[N])
   end,
   EndTime = erlang:monotonic_time(),
@@ -64,10 +71,10 @@ handle_info(_Message, S) ->
   Timeout = random:uniform(?MAX_OP_INTERVAL),
   {noreply, S, Timeout}.
 
-code_change(_OldVsn, State, _Extra) ->
-  {ok, State}.
+code_change(_OldVsn, State, _Extra) -> {ok, State}.
 
 terminate(normal, S) ->
-  io:format("Client ~s terminated. State: ~p~n",[S#state.id, S#state.ops]);
+  ets:insert(ops_db, {S#state.id, S#state.ops}),
+  io:format("Client ~s terminated.~n",[S#state.id]);
 terminate(Reason, S) ->
   io:format("Client ~s terminated, reason: ~p. State: ~p~n",[S#state.id, Reason, S#state.ops]).

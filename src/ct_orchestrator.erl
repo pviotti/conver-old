@@ -8,9 +8,13 @@ run(Num, Store) ->
   % Initialize store
   StoreModule = list_to_atom("ct_client_" ++ Store),
   erlang:apply(StoreModule, initialize, [ok]),
-  erlang:apply(StoreModule, write, [key, value]),
+  erlang:apply(StoreModule, write, [key, init_value]), % write initial value
+
+  % Initialize ETS table to collect testers' results
+  ets:new(ops_db, [set, named_table, public]),  % FIXME parametrize table name
+
   % Start testers
-  AtomIds = [list_to_atom([X]) || X <- lists:seq($a,$a+Num)],
+  AtomIds = [list_to_atom([X]) || X <- lists:seq($a,$a+Num-1)],
   TesterPids = proplists:get_all_values(ok,
     [ct_tester:start(X, StoreModule) || X <- AtomIds]),
   process_flag(trap_exit, true),
@@ -23,11 +27,12 @@ loop(Num) ->
     {'DOWN', Ref, process, Pid, Reason} ->
       io:format("Process ~p (~p) terminated, reason: ~p~n", [Ref,Pid,Reason]),
       case Num of
-        1 -> io:format("Testcase terminated.~n");
-        _ -> loop(Num-1)
+        1 ->
+          io:format("Testcase terminated. Results: ~n~p~n", [ets:tab2list(ops_db)]);
+        _ ->
+          loop(Num-1)
       end;
     Unknown ->
       io:format("Received message: ~p~n",[Unknown]),
       loop(Num)
   end.
-
