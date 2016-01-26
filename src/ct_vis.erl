@@ -69,21 +69,24 @@ draw_execution(Ops, [StartTime, EndTime]) ->
 
   Im = egd:create(W,H),
 
-  OpsA = element(2, hd(Ops)),
-  OpATimes = get_scaled_xs(FScaleTime, StartTime, OpsA, []),
-  io:format("~p~n",[OpATimes]),
-
-  [egd:rectangle(Im,
-    {X1,trunc(H/(2*NProc)+VMargin)}, {X2,trunc(H/(2*NProc)+VMargin-OpHeight)},
-    egd:color(black)) ||
-    {X1,X2} <- OpATimes],
-
   % Processes lines
   [egd:line(Im,
     {HMargin, trunc(H/(2*NProc)+(X-1)*(H/NProc)+VMargin)},
     {W-HMargin, trunc(H/(2*NProc)+(X-1)*(H/NProc)+VMargin)},
     egd:color(black))
     || X <- lists:seq(1,NProc)],
+
+  % Operations rectangles
+  FDrawRect =
+    fun(OpProc, IdxP) ->
+      OpTimes = get_scaled_xs(FScaleTime, StartTime, OpProc, []),
+      [egd:rectangle(Im,
+        {X1, trunc(H/(2*NProc)+(IdxP-1)*(H/NProc)+VMargin)},
+        {X2, trunc(H/(2*NProc)+(IdxP-1)*(H/NProc)+VMargin-OpHeight)},
+        egd:color(black)) ||
+        {X1,X2} <- OpTimes]
+    end,
+  [FDrawRect(X,Y) || {{_,X},Y} <- lists:zip(Ops, lists:seq(1, length(Ops)))],
 
   egd:save(egd:render(Im, png), "proc.png"),
   egd:destroy(Im).
