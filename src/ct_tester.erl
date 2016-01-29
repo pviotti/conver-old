@@ -9,14 +9,15 @@
 -export([init/1, handle_call/3, handle_cast/2,
   handle_info/2, code_change/3, terminate/2]).
 
--ifdef(debug).  % FIXME http://erlang.org/doc/reference_manual/macros.html#id85032
+-ifdef(debug).  % TODO http://erlang.org/doc/reference_manual/macros.html#id85032
 -define(LOG(X), io:format("[~p,~p]: ~p~n", [?MODULE,?LINE,X])).
 -else.
 -define(LOG(X), true).
 -endif.
 
 -define(MAX_OP_INTERVAL, 800). % max inter-operation interval
--define(MAX_OPERATIONS, 10).    % max number of operations
+-define(MEAN_OPS, 10).    % mean of uniformly distributed number of operations
+-define(SIGMA_OPS, 2).    % sigma of uniformly distributed number of operations
 -define(READ_PROBABILITY, 2).   % 1 out of X is a read
 
 % External API
@@ -28,8 +29,8 @@ init([Id, StoreModule]) ->
   process_flag(trap_exit, true), % To know when the parent shuts down
   random:seed(erlang:timestamp()), % To do once per process
   Timeout = random:uniform(?MAX_OP_INTERVAL),
-  NumOp = random:uniform(?MAX_OPERATIONS),
-  io:format("Client ~s initialized.~n", [Id]),
+  NumOp = trunc(rnd_normal(?MEAN_OPS, ?SIGMA_OPS)),
+  %io:format("C-~s init.~n", [Id]),
   {ok, #state{id=Id, store=StoreModule, num_op=NumOp, ops=[]}, Timeout}.
 
 handle_call(_Message, _From, S) -> {noreply, S, random:uniform(?MAX_OP_INTERVAL)}.
@@ -40,20 +41,20 @@ handle_info(timeout, S = #state{num_op=0}) ->
   {stop, normal, S};
 handle_info(timeout, S = #state{id=N, num_op=NumOp, ops=Ops}) ->
   StartTime = erlang:monotonic_time(),
-  case random:uniform(?READ_PROBABILITY) of
+  case random:uniform(?READ_PROBABILITY) of   % TODO hadle timeouts and errors
     1 ->
       OpType = read,
-      Res = erlang:apply(S#state.store, read, [key]),
-      io:format("Client ~s reads.~n",[N]);
+      Arg = erlang:apply(S#state.store, read, [key]),
+      io:format("C~s:R:~p. ",[N,Arg]);
     _ ->
       OpType = write,
-      Res = erlang:apply(S#state.store, write,
-        [key, erlang:unique_integer([monotonic,positive])]), % unique value, monotonic
-      io:format("Client ~s writes.~n",[N])
+      Arg = erlang:unique_integer([monotonic,positive]), % unique value, monotonic
+      erlang:apply(S#state.store, write, [key, Arg]),
+      io:format("C~s:W(~p). ",[N,Arg])
   end,
   EndTime = erlang:monotonic_time(),
   StateNew=S#state{num_op=(NumOp-1), ops = [#op{op_type=OpType,
-    start_time = StartTime, end_time = EndTime, result = Res} | Ops]},
+    start_time = StartTime, end_time = EndTime, arg = Arg} | Ops]},
   Timeout = random:uniform(?MAX_OP_INTERVAL),
   {noreply, StateNew, Timeout};
 handle_info(_Message, S) ->
@@ -65,6 +66,17 @@ code_change(_OldVsn, State, _Extra) -> {ok, State}.
 
 terminate(normal, S) ->
   ets:insert(ops_db, {S#state.id, S#state.ops}),
-  io:format("Client ~s terminated.~n",[S#state.id]);
+  io:format("C~s terminated.~n",[S#state.id]);
 terminate(Reason, S) ->
   io:format("Client ~s terminated, reason: ~p. State: ~p~n",[S#state.id, Reason, S#state.ops]).
+
+
+%% Private functions
+
+%% Generates a Normal-distributed random variable, using Box-Muller method
+%% from: https://github.com/basho/basho_stats/blob/develop/src/basho_stats_rv.erl
+rnd_normal(Mean, Sigma) ->
+  Rv1 = random:uniform(),
+  Rv2 = random:uniform(),
+  Rho = math:sqrt(-2 * math:log(1-Rv2)),
+  Rho * math:cos(2 * math:pi() * Rv1) * Sigma + Mean.
