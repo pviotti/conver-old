@@ -54,15 +54,15 @@ draw() ->
 
 
 draw_execution(Ops, [StartTime, EndTime]) ->
-  W = 1024,
-  H = 768,
-
-  HMargin = trunc(W/20),
-  VMargin = trunc(H/40),
-  OpHeight = trunc(H/40),
 
   NProc = length(Ops),
   TotTime = EndTime - StartTime,
+
+  OpHeight = 45, VMargin = 38, HMargin = 50,
+  GoldenRatio = (1 + math:sqrt(5))/2,
+  H = (OpHeight + VMargin) * NProc *2,
+  W = trunc(H + H/GoldenRatio),
+
   LineLength = W - (HMargin * 2),
 
   FScaleTime = fun(X) -> trunc((LineLength * X)/TotTime + HMargin) end,

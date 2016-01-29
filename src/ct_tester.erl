@@ -1,5 +1,3 @@
-%%  [ct_tester:start(list_to_atom(X))|| X <- [[Y] || Y <- "abcde"]].
-
 -module(ct_tester).
 -compile([debug_info]).
 
@@ -11,13 +9,13 @@
 -export([init/1, handle_call/3, handle_cast/2,
   handle_info/2, code_change/3, terminate/2]).
 
--ifdef(debug).  % FIXME
+-ifdef(debug).  % FIXME http://erlang.org/doc/reference_manual/macros.html#id85032
 -define(LOG(X), io:format("[~p,~p]: ~p~n", [?MODULE,?LINE,X])).
 -else.
 -define(LOG(X), true).
 -endif.
 
--define(MAX_OP_INTERVAL, 1000). % max inter-operation interval
+-define(MAX_OP_INTERVAL, 800). % max inter-operation interval
 -define(MAX_OPERATIONS, 10).    % max number of operations
 -define(READ_PROBABILITY, 2).   % 1 out of X is a read
 
@@ -54,7 +52,6 @@ handle_info(timeout, S = #state{id=N, num_op=NumOp, ops=Ops}) ->
       io:format("Client ~s writes.~n",[N])
   end,
   EndTime = erlang:monotonic_time(),
-  %OpLatency = EndTime - StartTime,
   StateNew=S#state{num_op=(NumOp-1), ops = [#op{op_type=OpType,
     start_time = StartTime, end_time = EndTime, result = Res} | Ops]},
   Timeout = random:uniform(?MAX_OP_INTERVAL),
