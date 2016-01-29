@@ -33,16 +33,19 @@ init([]) ->
   {ok, []}.
 
 handle_call({write, Key, Val}, _From, _State) ->
-  timer:sleep(random:uniform(?MAX_OP_LATENCY)),
+  timer:sleep(random:uniform(?MAX_OP_LATENCY div 2)),
   Res = ets:insert(?MODULE, {Key, Val}),  % overwrites if table is of type 'set'
+  timer:sleep(random:uniform(?MAX_OP_LATENCY div 2)),
   {reply, Res, _State};
 handle_call({read, Key}, _From, _State) ->
-  timer:sleep(random:uniform(?MAX_OP_LATENCY)),
+  timer:sleep(random:uniform(?MAX_OP_LATENCY div 2)),
   Res = ets:lookup_element(?MODULE, Key, 2),
+  timer:sleep(random:uniform(?MAX_OP_LATENCY div 2)),
   {reply, Res, _State};
 handle_call({delete, Key}, _From, _State) ->
-  timer:sleep(random:uniform(?MAX_OP_LATENCY)),
+  timer:sleep(random:uniform(?MAX_OP_LATENCY div 2)),
   Res = ets:delete(?MODULE, Key),
+  timer:sleep(random:uniform(?MAX_OP_LATENCY div 2)),
   {reply, Res, _State};
 handle_call(terminate, _From, _State) ->
   {stop, normal, ok, _State}.

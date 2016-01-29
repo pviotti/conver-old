@@ -50,7 +50,7 @@ draw_execution(Ops, [StartTime, EndTime], FileName) ->
 
 %% Private functions
 
-convert_ops_details(FScaleTime, StartTime, [], Acc) -> Acc;
+convert_ops_details(_FScaleTime, _StartTime, [], Acc) -> Acc;
 convert_ops_details(FScaleTime, StartTime, [H|T], Acc) ->
   Op = {FScaleTime(H#op.start_time - StartTime),
     FScaleTime(H#op.end_time - StartTime),

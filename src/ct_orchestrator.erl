@@ -25,7 +25,7 @@ run(Num, Store) ->
 
 loop(Num, {StartTime,Store}) ->
   receive
-    {'DOWN', Ref, process, Pid, Reason} ->
+    {'DOWN', _Ref, process, _Pid, _Reason} ->
       %io:format("Process ~p (~p) terminated, reason: ~p~n", [Ref,Pid,Reason]),
       case Num of
         1 ->
