@@ -1,0 +1,68 @@
+-module(ct_statem).
+
+%-ifdef(PROPER).
+
+-behaviour(proper_statem).
+
+-include_lib("proper/include/proper.hrl").
+
+%% API
+-export([]).
+
+-export([test/0, sample/0]).
+-export([initial_state/0, command/1, precondition/2, postcondition/3,
+  next_state/3]).
+
+-record(state, {val  :: integer()}).
+
+-define(SERVER, ct_client_mock).
+
+%%--------------------------------------------------------------------
+%%% Statem callbacks
+%%--------------------------------------------------------------------
+
+test() ->
+  proper:quickcheck(?MODULE:prop_consistency()).
+
+sample() ->
+  proper_gen:pick(commands(?MODULE)).
+
+prop_consistency() ->
+  ?FORALL(Cmds, commands(?MODULE),
+    ?TRAPEXIT(
+      begin
+        ?SERVER:initialize(ok),
+        {History,State,Result} = run_commands(?MODULE, Cmds),
+        ?SERVER:terminate(),
+        ?WHENFAIL(io:format("History: ~w~nState: ~w\nResult: ~w~n",
+          [History,State,Result]),
+          aggregate(command_names(Cmds), Result =:= ok))
+      end)).
+
+initial_state() ->
+  #state{val = 0}.
+
+command(S) ->
+  oneof([ % or: frequency
+    {call, ?SERVER, read, [key]},
+    {call, ?SERVER, write, [key, value()]}
+  ]).
+
+value() ->
+  erlang:unique_integer([monotonic,positive]).
+
+precondition(_, _) ->
+  true.
+
+next_state(S, _V, {call,_,read,[key]}) ->
+  S;
+next_state(S, _, {call,_,write,[key,Value]}) ->
+  S#state{val = Value}.
+
+postcondition(_S, {call,_,write,[key,_Value]}, Result) ->
+  %io:format(Result),
+  Result =:= true;
+postcondition(S, {call,_,read,[key]}, Result) ->
+  Result =:= S#state.val.
+
+%-endif.

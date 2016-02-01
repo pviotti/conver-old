@@ -8,7 +8,6 @@ run(Num, Store) ->
   % Initialize store
   StoreModule = list_to_atom("ct_client_" ++ Store),
   erlang:apply(StoreModule, initialize, [ok]),
-  erlang:apply(StoreModule, write, [key, 0]), % write initial value
 
   % Initialize ETS table to collect testers' results
   ets:new(ops_db, [ordered_set, named_table, public]),  % FIXME parametrize table name
@@ -30,8 +29,10 @@ loop(Num, {StartTime,Store}) ->
       case Num of
         1 ->
           EndTime = erlang:monotonic_time(),
-          io:format("Testcase terminated. Results: ~n~p~n", [ets:tab2list(ops_db)]),
-          ct_vis:draw_execution(ets:tab2list(ops_db),[StartTime,EndTime],Store);
+          OpList = ets:tab2list(ops_db),
+          io:format("Testcase terminated. Results: ~n~p~n", [OpList]),
+          ct_vis:draw_execution(OpList,[StartTime,EndTime],Store),
+          %ct_ordering:build_rb(OpList);
         _ ->
           loop(Num-1, {StartTime,Store})
       end;

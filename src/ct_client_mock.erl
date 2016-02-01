@@ -30,6 +30,7 @@ terminate() ->
 %%% Server functions
 init([]) ->
   ets:new(?MODULE, [set, named_table]),
+  ets:insert(?MODULE, {key, 0}),
   {ok, []}.
 
 handle_call({write, Key, Val}, _From, _State) ->
