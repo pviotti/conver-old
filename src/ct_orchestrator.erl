@@ -31,7 +31,7 @@ loop(Num, {StartTime,Store}) ->
           EndTime = erlang:monotonic_time(),
           OpList = ets:tab2list(ops_db),
           io:format("Testcase terminated. Results: ~n~p~n", [OpList]),
-          ct_vis:draw_execution(OpList,[StartTime,EndTime],Store),
+          ct_vis:draw_execution(OpList,[StartTime,EndTime],Store);
           %ct_ordering:build_rb(OpList);
         _ ->
           loop(Num-1, {StartTime,Store})

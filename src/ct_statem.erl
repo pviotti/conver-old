@@ -54,7 +54,7 @@ prop_paral_consistency() ->
 initial_state() ->
   #state{val = 0}.
 
-command(S) ->
+command(_S) ->
   oneof([ % or: frequency
     {call, ?SERVER, read, [key]},
     {call, ?SERVER, write, [key, value()]}
@@ -72,7 +72,6 @@ next_state(S, _, {call,_,write,[key,Value]}) ->
   S#state{val = Value}.
 
 postcondition(_S, {call,_,write,[key,_Value]}, Result) ->
-  %io:format(Result),
   Result =:= true;
 postcondition(S, {call,_,read,[key]}, Result) ->
   Result =:= S#state.val.
