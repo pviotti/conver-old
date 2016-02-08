@@ -1,6 +1,6 @@
 # Consistency tester
 
-A tool to test perform property-based testing of consistency semantics.
+A tool to perform property-based testing of consistency semantics.
 
 ## Build
 
