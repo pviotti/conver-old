@@ -5,9 +5,8 @@
 %% API
 -export([draw_execution/3]).
 
-draw_execution(Ops, [StartTime, EndTime], FileName) ->
+draw_execution(Ops, Duration, FileName) ->
   NProc = length(Ops),
-  TotTime = EndTime - StartTime,
 
   OpHeight = 45, VMargin = 38, HMargin = 50,
   GoldenRatio = (1 + math:sqrt(5))/2,
@@ -30,10 +29,10 @@ draw_execution(Ops, [StartTime, EndTime], FileName) ->
     || {{ProcName,_},X} <- lists:zip(Ops, lists:seq(1, NProc))],
 
   % Operations rectangles
-  FScaleTime = fun(X) -> trunc((LineLength * X)/TotTime + HMargin) end,
+  FScaleTime = fun(X) -> trunc((LineLength * X)/ Duration + HMargin) end,
   FDrawRect =
     fun(OpProc, IdxP) ->
-      OpDetails = convert_ops_details(FScaleTime, StartTime, OpProc, []),
+      OpDetails = convert_ops_details(FScaleTime, OpProc, []),
       [{egd:text(Im,
           {X1, trunc(H/(2*NProc)+(IdxP-1)*(H/NProc)+VMargin)},
           Font, Label, egd:color(black)),
@@ -50,12 +49,11 @@ draw_execution(Ops, [StartTime, EndTime], FileName) ->
 
 %% Private functions
 
-convert_ops_details(_FScaleTime, _StartTime, [], Acc) -> Acc;
-convert_ops_details(FScaleTime, StartTime, [H|T], Acc) ->
-  Op = {FScaleTime(H#op.start_time - StartTime),
-    FScaleTime(H#op.end_time - StartTime),
-    get_op_label(H#op.op_type, H#op.arg) },
-  convert_ops_details(FScaleTime, StartTime, T, [Op|Acc]).
+convert_ops_details(_FScaleTime, [], Acc) -> Acc;
+convert_ops_details(FScaleTime, [H|T], Acc) ->
+  Op = {FScaleTime(H#op.start_time), FScaleTime(H#op.end_time),
+    get_op_label(H#op.op_type, H#op.arg)},
+  convert_ops_details(FScaleTime, T, [Op|Acc]).
 
 get_op_label(Type, Arg) ->
   case Type of

@@ -5,7 +5,7 @@
 
 -behavior(gen_server).
 
--export([start/2]).
+-export([start/3]).
 -export([init/1, handle_call/3, handle_cast/2,
   handle_info/2, code_change/3, terminate/2]).
 
@@ -16,22 +16,22 @@
 -endif.
 
 -define(MAX_OP_INTERVAL, 800). % max inter-operation interval
--define(MEAN_OPS, 10).    % mean of uniformly distributed number of operations
+-define(MEAN_OPS, 5).    % mean of uniformly distributed number of operations
 -define(SIGMA_OPS, 2).    % sigma of uniformly distributed number of operations
 -define(READ_PROBABILITY, 2).   % 1 out of X is a read
 
 % External API
-start(Id, Store) when is_atom(Id), is_atom(Store) ->
-  gen_server:start({local, Id}, ?MODULE, [Id, Store], []).
+start(Id, Store, InitTime) when is_atom(Id), is_atom(Store) ->
+  gen_server:start({local, Id}, ?MODULE, [Id, Store, InitTime], []).
 
 % Functions called by gen_server
-init([Id, StoreModule]) ->
+init([Id, StoreModule, InitTime]) ->
   process_flag(trap_exit, true), % To know when the parent shuts down
   random:seed(erlang:timestamp()), % To do once per process
   Timeout = random:uniform(?MAX_OP_INTERVAL),
   NumOp = trunc(rnd_normal(?MEAN_OPS, ?SIGMA_OPS)),
   %io:format("C-~s init.~n", [Id]),
-  {ok, #state{id=Id, store=StoreModule, num_op=NumOp, ops=[]}, Timeout}.
+  {ok, #state{id=Id, store=StoreModule, t0=InitTime, num_op=NumOp, ops=[]}, Timeout}.
 
 handle_call(_Message, _From, S) -> {noreply, S, random:uniform(?MAX_OP_INTERVAL)}.
 
@@ -39,8 +39,8 @@ handle_cast(_Message, S) -> {noreply, S, random:uniform(?MAX_OP_INTERVAL)}.
 
 handle_info(timeout, S = #state{num_op=0}) ->
   {stop, normal, S};
-handle_info(timeout, S = #state{id=N, num_op=NumOp, ops=Ops}) ->
-  StartTime = erlang:monotonic_time(),
+handle_info(timeout, S = #state{id=N, t0=T0, num_op=NumOp, ops=Ops}) ->
+  StartTime = erlang:monotonic_time(nano_seconds) - T0,
   case random:uniform(?READ_PROBABILITY) of   % TODO hadle timeouts and errors
     1 ->
       OpType = read,
@@ -52,8 +52,8 @@ handle_info(timeout, S = #state{id=N, num_op=NumOp, ops=Ops}) ->
       erlang:apply(S#state.store, write, [key, Arg]),
       io:format("C~s:W(~p). ",[N,Arg])
   end,
-  EndTime = erlang:monotonic_time(),
-  StateNew=S#state{num_op=(NumOp-1), ops = [#op{op_type=OpType,
+  EndTime = erlang:monotonic_time(nano_seconds) - T0,
+  StateNew=S#state{num_op=(NumOp-1), ops = [#op{op_type=OpType, proc = S#state.id,
     start_time = StartTime, end_time = EndTime, arg = Arg} | Ops]},
   Timeout = random:uniform(?MAX_OP_INTERVAL),
   {noreply, StateNew, Timeout};

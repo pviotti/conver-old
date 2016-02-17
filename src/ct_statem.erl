@@ -1,6 +1,6 @@
 -module(ct_statem).
 
-%-ifdef(PROPER).
+-ifdef(PROPER).
 
 -behaviour(proper_statem).
 
@@ -68,7 +68,7 @@ precondition(_, _) ->
 
 next_state(S, _V, {call,_,read,[key]}) ->
   S;
-next_state(S, _, {call,_,write,[key,Value]}) ->
+next_state(S, _, {call,_,write,[key,Value]}) -> % TODO check if write succeded
   S#state{val = Value}.
 
 postcondition(_S, {call,_,write,[key,_Value]}, Result) ->
@@ -76,4 +76,4 @@ postcondition(_S, {call,_,write,[key,_Value]}, Result) ->
 postcondition(S, {call,_,read,[key]}, Result) ->
   Result =:= S#state.val.
 
-%-endif.
+-endif.

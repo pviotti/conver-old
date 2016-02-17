@@ -14,9 +14,9 @@ run(Num, Store) ->
 
   % Start testers
   AtomIds = [list_to_atom([X]) || X <- lists:seq($a,$a+Num-1)],
-  StartTime = erlang:monotonic_time(),
+  StartTime = erlang:monotonic_time(nano_seconds),
   TesterPids = proplists:get_all_values(ok,
-    [ct_tester:start(X, StoreModule) || X <- AtomIds]),
+    [ct_tester:start(X, StoreModule, StartTime) || X <- AtomIds]),
   process_flag(trap_exit, true),
   lists:map(fun(X) -> erlang:monitor(process, X) end, TesterPids),
   loop(Num, {StartTime,Store}).
@@ -28,11 +28,11 @@ loop(Num, {StartTime,Store}) ->
       %io:format("Process ~p (~p) terminated, reason: ~p~n", [Ref,Pid,Reason]),
       case Num of
         1 ->
-          EndTime = erlang:monotonic_time(),
+          EndTime = erlang:monotonic_time(nano_seconds),
           OpList = ets:tab2list(ops_db),
           io:format("Testcase terminated. Results: ~n~p~n", [OpList]),
-          ct_vis:draw_execution(OpList,[StartTime,EndTime],Store);
-          %ct_ordering:build_rb(OpList);
+          ct_vis:draw_execution(OpList, EndTime-StartTime, Store),
+          ct_graph:build_graphs(OpList);
         _ ->
           loop(Num-1, {StartTime,Store})
       end;
