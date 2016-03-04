@@ -21,12 +21,33 @@ check_orderings(Ops) ->
   io:format("so in ar: ~p~n", [check_ar(Gar, Gso)]),
   io:format("vis in ar: ~p~n", [check_ar(Gar, Gvis)]),
   Lar = lists:sort(fun cmp_ar/2, O),
-  io:format("ar as list: ~p~n", [Lar]).
+  io:format("ar as list: ~p~n", [Lar]),
+  Lst = [check_ar_prec(X, Lar) || X <- Lar],
+  io:format("Lst: ~p~n", [Lst]).
 
 check_ar(Gar, G) ->
   Sar = sets:from_list(digraph:edges(Gar)),
   Sg = sets:from_list(digraph:edges(G)),
   sets:is_subset(Sg,Sar).
+
+check_ar_prec(Op, [H|T]) when Op#op.op_type == read ->
+  case H of
+    Op -> Op;
+    _ ->
+      case H#op.op_type of
+        write ->
+          if H#op.arg > Op#op.arg ->
+              NewOp = Op#op{notes = ko},
+              NewOp;
+            true ->
+              check_ar_prec(Op, T)
+          end;
+        read ->
+          check_ar_prec(Op, T)
+      end
+  end;
+check_ar_prec(Op, _) when Op#op.op_type == write ->
+  Op.
 
 
 build_ordering(O, FunCmp) ->

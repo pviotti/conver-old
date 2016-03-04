@@ -3,7 +3,9 @@
 -behaviour(ct_client).
 -behaviour(gen_server).
 
--define(MAX_OP_LATENCY, 300).  % max operation latency
+-define(MAX_OP_LATENCY, 450).  % max operation latency
+-define(MISREAD_PROBABILITY, 3).  % 1 out of X reads a previous value
+                                  % to simulate non-lin behaviour
 
 -export([initialize/1, read/1, write/2, delete/1, terminate/0]).
 -export([init/1, handle_call/3, handle_cast/2,
@@ -40,7 +42,13 @@ handle_call({write, Key, Val}, _From, _State) ->
   {reply, Res, _State};
 handle_call({read, Key}, _From, _State) ->
   timer:sleep(random:uniform(?MAX_OP_LATENCY div 2)),
-  Res = ets:lookup_element(?MODULE, Key, 2),
+  case random:uniform(?MISREAD_PROBABILITY) of
+    1 ->
+      ResCorrect = ets:lookup_element(?MODULE, Key, 2),
+      Res = ResCorrect -1;
+    _ ->
+      Res = ets:lookup_element(?MODULE, Key, 2)
+  end,
   timer:sleep(random:uniform(?MAX_OP_LATENCY div 2)),
   {reply, Res, _State};
 handle_call({delete, Key}, _From, _State) ->
