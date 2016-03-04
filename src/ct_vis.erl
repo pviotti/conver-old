@@ -45,7 +45,10 @@ draw_execution(Ops, Duration, FileName) ->
   [FDrawRect(X,Y) || {{_,X},Y} <- lists:zip(Ops, lists:seq(1, NProc))],
 
   egd:save(egd:render(Im, png), FileName ++ ".png"),
-  egd:destroy(Im).
+  egd:destroy(Im),
+  os:cmd("see " ++ FileName ++ ".png &"). % XXX
+
+
 
 %% Private functions
 

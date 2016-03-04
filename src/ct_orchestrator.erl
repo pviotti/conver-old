@@ -32,7 +32,7 @@ loop(Num, {StartTime,Store}) ->
           OpList = ets:tab2list(ops_db),
           io:format("Testcase terminated. Results: ~n~p~n", [OpList]),
           ct_vis:draw_execution(OpList, EndTime-StartTime, Store),
-          ct_graph:build_graphs(OpList);
+          ct_orders:check_orderings(OpList);
         _ ->
           loop(Num-1, {StartTime,Store})
       end;
