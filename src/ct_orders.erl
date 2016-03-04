@@ -5,7 +5,7 @@
 % TODO having a single graph with different labels?
 
 %% API
--export([build_orderings/1]).
+-export([check_orderings/1]).
 
 check_orderings(Ops) ->
   O = lists:append([X || {_,X} <- Ops]),

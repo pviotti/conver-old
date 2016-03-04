@@ -3,7 +3,7 @@
 -behaviour(ct_client).
 -behaviour(gen_server).
 
--define(MAX_OP_LATENCY, 500).  % max operation latency
+-define(MAX_OP_LATENCY, 300).  % max operation latency
 
 -export([initialize/1, read/1, write/2, delete/1, terminate/0]).
 -export([init/1, handle_call/3, handle_cast/2,
