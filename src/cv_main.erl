@@ -1,12 +1,11 @@
--module(ct_orchestrator).
--compile([debug_info]).
+-module(cv_main).
 
 -export([run/2]).
 
 
 run(Num, Store) ->
   % Initialize store
-  StoreModule = list_to_atom("ct_client_" ++ Store),
+  StoreModule = list_to_atom("cv_client_" ++ atom_to_list(Store)),
   erlang:apply(StoreModule, initialize, [ok]),
 
   % Initialize ETS table to collect testers' results
@@ -16,7 +15,7 @@ run(Num, Store) ->
   AtomIds = [list_to_atom([X]) || X <- lists:seq($a,$a+Num-1)],
   StartTime = erlang:monotonic_time(nano_seconds),
   TesterPids = proplists:get_all_values(ok,
-    [ct_tester:start(X, StoreModule, StartTime) || X <- AtomIds]),
+    [cv_tester:start(X, StoreModule, StartTime) || X <- AtomIds]),
   process_flag(trap_exit, true),
   lists:map(fun(X) -> erlang:monitor(process, X) end, TesterPids),
   loop(Num, {StartTime,Store}).
@@ -30,9 +29,8 @@ loop(Num, {StartTime,Store}) ->
         1 ->
           EndTime = erlang:monotonic_time(nano_seconds),
           OpList = ets:tab2list(ops_db),
-          io:format("Testcase terminated. Results: ~n~p~n", [OpList]),
-          ct_vis:draw_execution(OpList, EndTime-StartTime, Store),
-          ct_orders:check_orderings(OpList);
+          OpListChecked = cv_consistency:check_consistency(OpList),
+          cv_vis:draw_execution(OpListChecked, EndTime-StartTime, Store);
         _ ->
           loop(Num-1, {StartTime,Store})
       end;

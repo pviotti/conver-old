@@ -1,35 +1,35 @@
-# Consistency tester
+# Conver
 
-A tool to perform property-based testing of consistency semantics.
+Conver is a tool to verify implementations of consistency models.
+
 
 ## Build
 
 Requirements:
 
- * Erlang/OTP (tested with R18.2)
+ * Erlang/OTP - tested with R18.2
  * [PropEr](http://proper.softlab.ntua.gr/)
 
 To build:
 
-    erl -make
+> erl -make
+
 
 ## Run
 
+> erl -pa ./ebin -eval "cv_main:run(5, mock)." -s init stop -noshell
 
-    erl -pa ./ebin -eval "ct_orchestrator:run(5, \"mock\")." -s init stop -noshell
-
-where 5 is the number of clients and "mock" is the client type
-(in this case a client testing against a dummy in-memory store consisting of Erlang's ets).  
+where 5 is the number of client processes to spin and "mock" is the store type
+(in this case, a client testing against a dummy in-memory store consisting of Erlang's *ets*).
 It should print a trace of the execution and then draw the corresponding graph in the current 
-directory as ``client_type.png``.  
+directory as `client_type.png`.
   
   
 To run tests with PropEr:
 
-    erl -pa ./ebin -eval "ct_statem:test()." -s init stop -noshell
+> erl -pa ./ebin -eval "cv_statem:test()." -s init stop -noshell
     
-   
-    
+
 ## License
 
-TODO
+Apache 2.0.

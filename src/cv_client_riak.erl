@@ -1,6 +1,6 @@
--module(ct_client_riak).
+-module(cv_client_riak).
 
--behavior(ct_client).
+-behavior(cv_client).
 
 -export([initialize/1, read/1, write/2, delete/1, terminate/0]).
 

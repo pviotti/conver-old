@@ -1,7 +1,7 @@
--module(ct_tester).
+-module(cv_tester).
 -compile([debug_info]).
 
--include("ct_records.hrl").
+-include("cv_records.hrl").
 
 -behavior(gen_server).
 
@@ -9,15 +9,9 @@
 -export([init/1, handle_call/3, handle_cast/2,
   handle_info/2, code_change/3, terminate/2]).
 
--ifdef(debug).  % TODO http://erlang.org/doc/reference_manual/macros.html#id85032
--define(LOG(X), io:format("[~p,~p]: ~p~n", [?MODULE,?LINE,X])).
--else.
--define(LOG(X), true).
--endif.
-
--define(MAX_OP_INTERVAL, 800). % max inter-operation interval
--define(MEAN_OPS, 5).    % mean of uniformly distributed number of operations
--define(SIGMA_OPS, 2).    % sigma of uniformly distributed number of operations
+-define(MAX_OP_INTERVAL, 800).  % max inter-operation interval
+-define(MEAN_OPS, 4).           % mean of uniformly distributed number of operations
+-define(SIGMA_OPS, 2).          % sigma of uniformly distributed number of operations
 -define(READ_PROBABILITY, 2).   % 1 out of X is a read
 
 % External API
@@ -45,12 +39,12 @@ handle_info(timeout, S = #state{id=N, t0=T0, num_op=NumOp, ops=Ops}) ->
     1 ->
       OpType = read,
       Arg = erlang:apply(S#state.store, read, [key]),
-      io:format("C~s:R:~p. ",[N,Arg]);
+      io:format("P~s:R:~p. ",[N,Arg]);
     _ ->
       OpType = write,
       Arg = erlang:unique_integer([monotonic,positive]), % unique value, monotonic
       erlang:apply(S#state.store, write, [key, Arg]),
-      io:format("C~s:W(~p). ",[N,Arg])
+      io:format("P~s:W(~p). ",[N,Arg])
   end,
   EndTime = erlang:monotonic_time(nano_seconds) - T0,
   StateNew=S#state{num_op=(NumOp-1), ops = [#op{op_type=OpType, proc = S#state.id,
@@ -58,7 +52,7 @@ handle_info(timeout, S = #state{id=N, t0=T0, num_op=NumOp, ops=Ops}) ->
   Timeout = random:uniform(?MAX_OP_INTERVAL),
   {noreply, StateNew, Timeout};
 handle_info(_Message, S) ->
-  io:format("Client ~s received a message: ~s.~n",[S#state.id,_Message]),
+  io:format("Process ~s received a message: ~s.~n",[S#state.id,_Message]),
   Timeout = random:uniform(?MAX_OP_INTERVAL),
   {noreply, S, Timeout}.
 
@@ -66,9 +60,9 @@ code_change(_OldVsn, State, _Extra) -> {ok, State}.
 
 terminate(normal, S) ->
   ets:insert(ops_db, {S#state.id, S#state.ops}),
-  io:format("C~s terminated.~n",[S#state.id]);
+  io:format("P~s terminated.~n",[S#state.id]);
 terminate(Reason, S) ->
-  io:format("Client ~s terminated, reason: ~p. State: ~p~n",[S#state.id, Reason, S#state.ops]).
+  io:format("Process ~s terminated, reason: ~p. State: ~p~n",[S#state.id, Reason, S#state.ops]).
 
 
 %% Private functions

@@ -1,8 +1,7 @@
--module(ct_vis).
+-module(cv_vis).
 
--include("ct_records.hrl").
+-include("cv_records.hrl").
 
-%% API
 -export([draw_execution/3]).
 
 draw_execution(Ops, Duration, FileName) ->
@@ -20,7 +19,7 @@ draw_execution(Ops, Duration, FileName) ->
   EbinDir = filename:dirname(code:which(?MODULE)), % HACK to get into priv dir
   Filename = filename:join([filename:dirname(EbinDir),"priv","fonts","Helvetica14.wingsfont"]),
   Font = egd_font:load(Filename),
-  [{egd:text(Im, {trunc(HMargin/2), trunc(H/(2*NProc)+(X-1)*(H/NProc))},
+  _ = [{egd:text(Im, {trunc(HMargin/2), trunc(H/(2*NProc)+(X-1)*(H/NProc))},
       Font, string:to_upper(atom_to_list(ProcName)), egd:color(black)),
     egd:line(Im,
       {HMargin, trunc(H/(2*NProc)+(X-1)*(H/NProc)+VMargin)},
@@ -30,23 +29,23 @@ draw_execution(Ops, Duration, FileName) ->
 
   % Operations rectangles
   FScaleTime = fun(X) -> trunc((LineLength * X)/ Duration + HMargin) end,
-  FDrawRect =
+  FDrawOps =
     fun(OpProc, IdxP) ->
       OpDetails = convert_ops_details(FScaleTime, OpProc, []),
       [{egd:text(Im,
           {X1, trunc(H/(2*NProc)+(IdxP-1)*(H/NProc)+VMargin)},
-          Font, Label, egd:color(black)),
+          Font, Label, Color),
        egd:rectangle(Im,
         {X1, trunc(H/(2*NProc)+(IdxP-1)*(H/NProc)+VMargin)},
         {X2, trunc(H/(2*NProc)+(IdxP-1)*(H/NProc)+VMargin-OpHeight)},
         egd:color(black))} ||
-        {X1,X2,Label} <- OpDetails]
+        {X1,X2,Label,Color} <- OpDetails]
     end,
-  [FDrawRect(X,Y) || {{_,X},Y} <- lists:zip(Ops, lists:seq(1, NProc))],
+  [FDrawOps(X,Y) || {{_,X},Y} <- lists:zip(Ops, lists:seq(1, NProc))],
 
-  egd:save(egd:render(Im, png), FileName ++ ".png"),
+  egd:save(egd:render(Im, png), atom_to_list(FileName) ++ ".png"),
   egd:destroy(Im),
-  os:cmd("see " ++ FileName ++ ".png &"). % XXX
+  os:cmd("see " ++ atom_to_list(FileName) ++ ".png &"). % XXX
 
 
 
@@ -54,8 +53,13 @@ draw_execution(Ops, Duration, FileName) ->
 
 convert_ops_details(_FScaleTime, [], Acc) -> Acc;
 convert_ops_details(FScaleTime, [H|T], Acc) ->
+  Color = case H#op.notes of
+            ok -> egd:color(black);
+            ko -> egd:color(red);
+            ryw -> egd:color(fuchia)
+          end,
   Op = {FScaleTime(H#op.start_time), FScaleTime(H#op.end_time),
-    get_op_label(H#op.op_type, H#op.arg)},
+    get_op_label(H#op.op_type, H#op.arg), Color},
   convert_ops_details(FScaleTime, T, [Op|Acc]).
 
 get_op_label(Type, Arg) ->

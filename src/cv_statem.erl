@@ -1,4 +1,4 @@
--module(ct_statem).
+-module(cv_statem).
 
 -ifdef(PROPER).
 
