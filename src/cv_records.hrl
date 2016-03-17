@@ -1,7 +1,7 @@
 
 -type op_type() :: read | write.
 -record(op, {proc :: atom(),
-  op_type :: op_type(),
+  type :: op_type(),
   start_time :: integer(),
   end_time :: integer(),
   arg :: pos_integer(),

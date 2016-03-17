@@ -30,6 +30,7 @@ loop(Num, {StartTime,Store}) ->
           EndTime = erlang:monotonic_time(nano_seconds),
           OpList = ets:tab2list(ops_db),
           OpListChecked = cv_consistency:check_consistency(OpList),
+          %cv_consistency2:check_consistency(OpList),
           cv_vis:draw_execution(OpListChecked, EndTime-StartTime, Store);
         _ ->
           loop(Num-1, {StartTime,Store})

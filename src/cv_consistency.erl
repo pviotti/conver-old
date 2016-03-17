@@ -35,10 +35,10 @@ check_ar(Gar, G) ->
   sets:is_subset(Sg,Sar).
 
 
-check_ar_prec(Op, [Op|_]) when Op#op.op_type == read ->
+check_ar_prec(Op, [Op|_]) when Op#op.type == read ->
   Op;
-check_ar_prec(Op, [H|T]) when Op#op.op_type == read ->
-      case H#op.op_type of
+check_ar_prec(Op, [H|T]) when Op#op.type == read ->
+      case H#op.type of
         write ->
           if H#op.arg > Op#op.arg andalso H#op.proc == Op#op.proc ->
               Op#op{notes = ryw};
@@ -50,7 +50,7 @@ check_ar_prec(Op, [H|T]) when Op#op.op_type == read ->
         read ->
           check_ar_prec(Op, T)
       end;
-check_ar_prec(Op, _) when Op#op.op_type == write; Op#op.arg == 0 ->
+check_ar_prec(Op, _) when Op#op.type == write; Op#op.arg == 0 ->
   Op.
 
 
@@ -68,8 +68,8 @@ cmp_rb(Op1, Op2) ->
   Op1#op.end_time < Op2#op.start_time.
 
 cmp_vis(Op1, Op2) ->
-  Op1#op.op_type == write andalso
-    Op2#op.op_type == read andalso
+  Op1#op.type == write andalso
+    Op2#op.type == read andalso
     Op1#op.arg == Op2#op.arg.
 
 cmp_ar(Op1, Op2) ->

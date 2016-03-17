@@ -10,7 +10,7 @@
   handle_info/2, code_change/3, terminate/2]).
 
 -define(MAX_OP_INTERVAL, 800).  % max inter-operation interval
--define(MEAN_OPS, 4).           % mean of uniformly distributed number of operations
+-define(MEAN_OPS, 2).           % mean of uniformly distributed number of operations
 -define(SIGMA_OPS, 2).          % sigma of uniformly distributed number of operations
 -define(READ_PROBABILITY, 2).   % 1 out of X is a read
 
@@ -24,7 +24,7 @@ init([Id, StoreModule, InitTime]) ->
   random:seed(erlang:timestamp()), % To do once per process
   Timeout = random:uniform(?MAX_OP_INTERVAL),
   NumOp = trunc(rnd_normal(?MEAN_OPS, ?SIGMA_OPS)),
-  %io:format("C-~s init.~n", [Id]),
+  %io:format("C-~p init, n. ops: ~p~n", [Id, NumOp]),
   {ok, #state{id=Id, store=StoreModule, t0=InitTime, num_op=NumOp, ops=[]}, Timeout}.
 
 handle_call(_Message, _From, S) -> {noreply, S, random:uniform(?MAX_OP_INTERVAL)}.
@@ -47,7 +47,7 @@ handle_info(timeout, S = #state{id=N, t0=T0, num_op=NumOp, ops=Ops}) ->
       io:format("P~s:W(~p). ",[N,Arg])
   end,
   EndTime = erlang:monotonic_time(nano_seconds) - T0,
-  StateNew=S#state{num_op=(NumOp-1), ops = [#op{op_type=OpType, proc = S#state.id,
+  StateNew=S#state{num_op=(NumOp-1), ops = [#op{type =OpType, proc = S#state.id,
     start_time = StartTime, end_time = EndTime, arg = Arg} | Ops]},
   Timeout = random:uniform(?MAX_OP_INTERVAL),
   {noreply, StateNew, Timeout};
@@ -73,4 +73,4 @@ rnd_normal(Mean, Sigma) ->
   Rv1 = random:uniform(),
   Rv2 = random:uniform(),
   Rho = math:sqrt(-2 * math:log(1-Rv2)),
-  Rho * math:cos(2 * math:pi() * Rv1) * Sigma + Mean.
+  abs(Rho * math:cos(2 * math:pi() * Rv1) * Sigma + Mean).

@@ -59,7 +59,7 @@ convert_ops_details(FScaleTime, [H|T], Acc) ->
             ryw -> egd:color(fuchia)
           end,
   Op = {FScaleTime(H#op.start_time), FScaleTime(H#op.end_time),
-    get_op_label(H#op.op_type, H#op.arg), Color},
+    get_op_label(H#op.type, H#op.arg), Color},
   convert_ops_details(FScaleTime, T, [Op|Acc]).
 
 get_op_label(Type, Arg) ->
