@@ -47,7 +47,7 @@ handle_call({read, Key}, _From, _State) ->
       ResCorrect = ets:lookup_element(?MODULE, Key, 2),
       Res = case ResCorrect of
               0 -> 0;
-              _ -> ResCorrect -1
+              _ -> ResCorrect -2
             end;
     _ ->
       Res = ets:lookup_element(?MODULE, Key, 2)

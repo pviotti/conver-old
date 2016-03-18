@@ -9,8 +9,8 @@
 -export([init/1, handle_call/3, handle_cast/2,
   handle_info/2, code_change/3, terminate/2]).
 
--define(MAX_OP_INTERVAL, 800).  % max inter-operation interval
--define(MEAN_OPS, 2).           % mean of uniformly distributed number of operations
+-define(MAX_OP_INTERVAL, 400).  % max inter-operation interval
+-define(MEAN_OPS, 8).           % mean of uniformly distributed number of operations
 -define(SIGMA_OPS, 2).          % sigma of uniformly distributed number of operations
 -define(READ_PROBABILITY, 2).   % 1 out of X is a read
 
