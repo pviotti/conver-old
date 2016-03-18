@@ -10,27 +10,44 @@ check_consistency(Ops) ->
   [digraph:add_vertex(G, V) || V <- O],
   build_ordering(O, G, fun cmp_so/2, so),
 
-  check_monotonic_reads(G),
+  check_monotonic_reads(G), % TODO it may have to use vis too
   check_read_your_writes(G),
 
-  io:format("After session checks:~n"),
+  io:format("Operations after session checks:~n"),
   lists:foreach(fun(X)->
                   {V,L} = digraph:vertex(G,X),
                   io:format("~p - ~p~n", [V,L])
                 end,
     digraph:vertices(G)),
 
-  io:format("MR: ~p~n", [is_consistent(G, mr)]),
-  io:format("RYW: ~p~n", [is_consistent(G, ryw)]),
-
   build_ordering(O, G, fun cmp_rb/2, rb),
   build_ordering(O, G, fun cmp_vis/2, vis),
 
   build_ordering(O, G, fun cmp_ar_opmedian/2, ar),
 
-  io:format("RealTime: ~p~n", [is_subset(G, rb, ar)]),
-  io:format("MW: ~p~n", [check_monotonic_writes(G)]),
+  io:format("Edges:~n"),
+  lists:foreach(fun(X)->
+                  {E, _, _, L} = digraph:edge(G, X),
+                  io:format("~p - ~p~n", [E,L])
+                end,
+    digraph:edges(G)),
 
+  IsMR = is_consistent(G, mr),
+  IsRYW = is_consistent(G, ryw),
+
+  IsRealTime = is_subset(G, rb, ar),
+  IsMW = check_monotonic_writes(G),
+  IsWFR = check_writes_follow_reads(G),
+  IsPRAM = IsMR andalso IsMW andalso IsRYW,
+  IsCausal = IsPRAM andalso IsWFR,
+
+  io:format("MR: ~p~n", [IsMR]),
+  io:format("RYW: ~p~n", [IsRYW]),
+  io:format("RealTime: ~p~n", [IsRealTime]),
+  io:format("MW: ~p~n", [IsMW]),
+  io:format("WFR: ~p~n", [IsWFR]),
+  io:format("PRAM: ~p~n", [IsPRAM]),
+  io:format("Causal: ~p~n", [IsCausal]),
 
   io:format("so in ar: ~p~n", [is_subset(G, so, ar)]),
   io:format("vis in ar: ~p~n", [is_subset(G, vis, ar)]).
@@ -77,6 +94,17 @@ check_monotonic_writes(G) ->
   SetAr = sets:from_list(filter_edges_by_rel(G, ar)),
   sets:is_subset(SetSoWW, SetAr).
 
+
+check_writes_follow_reads(G) ->
+  FunFilterRW = fun(E) ->
+                  {V1,V2} = E,
+                  (V1#op.type == read) and (V2#op.type == write)
+                end,
+  SetSoRW = sets:from_list(lists:filter(FunFilterRW, filter_edges_by_rel(G, so))),
+  SetVis = sets:from_list(filter_edges_by_rel(G, vis)),
+  SetAr = sets:from_list(filter_edges_by_rel(G, ar)),
+  SetVisSoRW = sets:union(SetSoRW, SetVis),
+  sets:is_subset(SetVisSoRW, SetAr).
 
 check_monotonic_reads(G) ->
   FunSortRb = fun(OpList) -> lists:sort(fun cmp_rb/2, OpList) end,
