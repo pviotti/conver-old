@@ -8,14 +8,19 @@ in order to check the compliance with the most common consistency semantics.
 
 Datastores supported:
 
- * [x] Dummy (in-memory ets)
+ * [x] Dummy (in-memory *ets*)
  * [ ] Riak
- * [ ] Cassandra
+ * [ ] ZooKeeper
 
 Consistency semantics currently supported:
 
- * [x] RYW
- * [ ] linearizability (w. chosen linearization points)
+ * [x] Monotonic Reads
+ * [x] Monotonic Writes
+ * [x] Read-your-writes
+ * [x] PRAM
+ * [x] Writes-follow-reads
+ * [x] Causal
+ * [x] Linearizability (with chosen linearization points)
 
 ## Build
 

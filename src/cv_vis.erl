@@ -54,9 +54,12 @@ draw_execution(Ops, Duration, FileName) ->
 convert_ops_details(_FScaleTime, [], Acc) -> Acc;
 convert_ops_details(FScaleTime, [H|T], Acc) ->
   Color = case H#op.notes of
-            ok -> egd:color(black);
-            ko -> egd:color(red);
-            ryw -> egd:color(fuchia)
+            [] -> egd:color(black);
+            _ -> case lists:nth(1, H#op.notes) of
+                   rval -> egd:color(red);
+                   ryw -> egd:color(fuchia);
+                   mr -> egd:color(green)
+                 end
           end,
   Op = {FScaleTime(H#op.start_time), FScaleTime(H#op.end_time),
     get_op_label(H#op.type, H#op.arg), Color},

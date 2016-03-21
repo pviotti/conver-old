@@ -2,14 +2,16 @@
 
 -export([run/2]).
 
+-define(ETS_TABLE, ops_db).
+
 
 run(Num, Store) ->
   % Initialize store
   StoreModule = list_to_atom("cv_client_" ++ atom_to_list(Store)),
   erlang:apply(StoreModule, initialize, [ok]),
 
-  % Initialize ETS table to collect testers' results
-  ets:new(ops_db, [ordered_set, named_table, public]),  % FIXME parametrize table name
+  % Initialize ETS table to collect results
+  ets:new(?ETS_TABLE, [ordered_set, named_table, public]),
 
   % Start testers
   AtomIds = [list_to_atom([X]) || X <- lists:seq($a,$a+Num-1)],
@@ -28,9 +30,8 @@ loop(Num, {StartTime,Store}) ->
       case Num of
         1 ->
           EndTime = erlang:monotonic_time(nano_seconds),
-          OpList = ets:tab2list(ops_db),
+          OpList = ets:tab2list(?ETS_TABLE),
           OpListChecked = cv_consistency:check_consistency(OpList),
-          cv_consistency3:check_consistency(OpList),
           cv_vis:draw_execution(OpListChecked, EndTime-StartTime, Store);
         _ ->
           loop(Num-1, {StartTime,Store})
