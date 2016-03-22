@@ -3,7 +3,7 @@
 -behaviour(cv_client).
 -behaviour(gen_server).
 
--define(MAX_OP_LATENCY, 450).  % max operation latency
+-define(MAX_OP_LATENCY, 650).  % max operation latency
 -define(MISREAD_PROBABILITY, 3).  % 1 out of X reads a previous value
                                   % to simulate non-lin behavior
 

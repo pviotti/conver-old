@@ -15,7 +15,7 @@
 
 -record(state, {val  :: integer()}).
 
--define(SERVER, ct_client_mock).
+-define(SERVER, cv_client_mock).
 
 %%--------------------------------------------------------------------
 %%% Statem callbacks

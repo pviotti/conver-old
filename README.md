@@ -55,7 +55,7 @@ To run tests with PropEr:
 To have an overview of the consistency models checked by Conver, see [this survey][survey].  
 The approach implemented in Conver has been described in [this PaPoC 2016 paper][papoc].  
 
-Related project:
+Related projects:
 
  * [Jepsen][jepsen]
  * [Hermitage][hermitage]
