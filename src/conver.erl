@@ -1,14 +1,13 @@
 -module(conver).
 
+-include("conver.hrl").
+
 %% API exports
 -export([main/2]).
 
--define(ETS_TABLE, ops_db).
 
 
-%%====================================================================
 %% API functions
-%%====================================================================
 
 main(Num, StoreAtom) ->
   % Initialize store
@@ -30,9 +29,7 @@ main(Num, StoreAtom) ->
   erlang:halt(0).
 
 
-%%====================================================================
 %% Internal functions
-%%====================================================================
 
 loop(Num, {StartTime,Store}) ->
   receive

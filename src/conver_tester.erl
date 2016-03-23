@@ -1,5 +1,4 @@
 -module(conver_tester).
--compile([debug_info]).
 
 -include("conver.hrl").
 
@@ -9,16 +8,13 @@
 -export([init/1, handle_call/3, handle_cast/2,
   handle_info/2, code_change/3, terminate/2]).
 
--define(MAX_OP_INTERVAL, 600).  % max inter-operation interval
--define(MEAN_OPS, 6).           % mean of uniformly distributed number of operations
--define(SIGMA_OPS, 2).          % sigma of uniformly distributed number of operations
--define(READ_PROBABILITY, 2).   % 1 out of X is a read
 
-% External API
+%% External API
 start(Id, Store, InitTime) when is_atom(Id), is_atom(Store) ->
   gen_server:start({local, Id}, ?MODULE, [Id, Store, InitTime], []).
 
-% Functions called by gen_server
+
+%% Functions called by gen_server
 init([Id, StoreModule, InitTime]) ->
   process_flag(trap_exit, true), % To know when the parent shuts down
   random:seed(erlang:timestamp()), % To do once per process
@@ -59,7 +55,7 @@ handle_info(_Message, S) ->
 code_change(_OldVsn, State, _Extra) -> {ok, State}.
 
 terminate(normal, S) ->
-  ets:insert(ops_db, {S#state.id, S#state.ops}),
+  ets:insert(?ETS_TABLE, {S#state.id, S#state.ops}),
   io:format("P~s terminated.~n",[S#state.id]);
 terminate(Reason, S) ->
   io:format("Process ~s terminated, reason: ~p. State: ~p~n",[S#state.id, Reason, S#state.ops]).

@@ -1,7 +1,5 @@
 -module(conver_statem).
 
--ifdef(PROPER).
-
 -behaviour(proper_statem).
 
 -include_lib("proper/include/proper.hrl").
@@ -76,4 +74,3 @@ postcondition(_S, {call,_,write,[key,_Value]}, Result) ->
 postcondition(S, {call,_,read,[key]}, Result) ->
   Result =:= S#state.val.
 
--endif.
