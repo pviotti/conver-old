@@ -27,12 +27,7 @@ highlighting possible violations of consistency models.
 
 ## Getting started
 
-Requirements:
-
- * Erlang/OTP - tested with R18.2
- * [PropEr][proper]
-
-To build:
+Once installed Erlang/OTP (R18+), to build Conver issue:
 
     $ ./do.sh make
 
@@ -69,4 +64,3 @@ License: Apache 2.0.
  [jepsen]: http://jepsen.io/
  [hermitage]: https://github.com/ept/hermitage
  [eurecom]: http://www.eurecom.fr
- [proper]: http://proper.softlab.ntua.gr/
