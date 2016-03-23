@@ -31,7 +31,7 @@ clean)
     ;;
 proper)
     ./rebar3 compile >/dev/null
-    erl -pa ./_build/default/lib/conver/ebin -pa ./_build/default/lib/proper/ebin -eval "conver_statem:test()." -s init stop -noshell
+    erl -pa ./_build/default/lib/*/ebin -eval "conver_statem:test()." -s init stop -noshell
     ;;
 run)
     if [ $# -ne 3 ]
@@ -40,7 +40,7 @@ run)
         exit 1
     else
         ./rebar3 compile >/dev/null
-        erl -pa ./_build/default/lib/conver/ebin -noshell -eval "conver:main($2, $3)." -s init stop
+        erl -pa ./_build/default/lib/*/ebin -noshell -eval "conver:main($2, $3)." -s init stop
     fi    
     ;;
 *)
