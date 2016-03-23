@@ -43,9 +43,9 @@ To run a simple execution:
 where 5 is the number of client processes, and "mock" is the name of the store under test
 (in this case, a dummy in-memory store consisting of Erlang's *ets*).  
 
-To run tests with PropEr:
+To run a demonstrative test of the dummy datastore using PropEr:
 
-    erl -pa ./ebin -eval "cv_statem:test()." -s init stop -noshell
+    $ ./do.sh proper
 
 
 ## Documentation

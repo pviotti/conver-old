@@ -6,9 +6,10 @@
 #----------------------------------------------------------------------------
 
 usage() {
-  echo "Usage: ./`basename $0` make|clean|run <nc> <store>"
+  echo "Usage: ./`basename $0` make|clean|run <nc> <store>|proper"
   echo "    make: compile Conver"
   echo "    clean: remove compiled artifacts"
+  echo "    proper: run PropEr test on mock datastore"
   echo "    run <nc> <store>: run Conver"
   echo "        nc: number of clients"
   echo "        store: datastore under test (e.g., mock, riak, zk)"
@@ -27,6 +28,10 @@ make)
     ;;
 clean)
     ./rebar3 clean
+    ;;
+proper)
+    ./rebar3 compile >/dev/null
+    erl -pa ./_build/default/lib/conver/ebin -pa ./_build/default/lib/proper/ebin -eval "conver_statem:test()." -s init stop -noshell
     ;;
 run)
     if [ $# -ne 3 ]
