@@ -29,5 +29,6 @@ delete(_Key) ->
   erlzk:delete(whereis(zk_proc), "/key").
 
 terminate() ->
+  erlzk:delete(whereis(zk_proc), "/key"),
   erlzk:close(whereis(zk_proc)).
 
