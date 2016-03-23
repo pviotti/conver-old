@@ -35,7 +35,7 @@ To run a simple execution:
 
     $ ./do.sh run 3 mock
 
-where 5 is the number of client processes, and "mock" is the name of the store under test
+where 3 is the number of client processes, and "mock" is the name of the store under test
 (in this case, a dummy in-memory store consisting of Erlang's *ets*).  
 
 To run a demonstrative test of the dummy datastore using PropEr:
