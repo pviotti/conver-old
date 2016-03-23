@@ -1,6 +1,6 @@
--module(cv_client_mock).
+-module(conver_client_mock).
 
--behaviour(cv_client).
+-behaviour(conver_client).
 -behaviour(gen_server).
 
 -define(MAX_OP_LATENCY, 650).  % max operation latency

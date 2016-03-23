@@ -1,6 +1,6 @@
--module(cv_client_riak).
+-module(conver_client_riak).
 
--behavior(cv_client).
+-behavior(conver_client).
 
 -export([initialize/1, read/1, write/2, delete/1, terminate/0]).
 

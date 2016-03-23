@@ -1,10 +1,10 @@
--module(cv_vis).
+-module(conver_vis).
 
 -include("conver.hrl").
 
 -export([draw_execution/3]).
 
-draw_execution(Ops, Duration, FileName) ->
+draw_execution(Ops, Duration, StoreName) ->
   NProc = length(Ops),
 
   OpHeight = 45, VMargin = 38, HMargin = 50,
@@ -43,10 +43,10 @@ draw_execution(Ops, Duration, FileName) ->
     end,
   [FDrawOps(X,Y) || {{_,X},Y} <- lists:zip(Ops, lists:seq(1, NProc))],
 
-  FileFullName = atom_to_list(FileName) ++ ".png",
-  egd:save(egd:render(Im, png), FileFullName),
+  FileName = StoreName ++ ".png",
+  egd:save(egd:render(Im, png), FileName),
   egd:destroy(Im),
-  os:cmd("see " ++ FileFullName ++ " &"). % XXX
+  os:cmd("see " ++ FileName ++ " &"). % XXX
 
 
 

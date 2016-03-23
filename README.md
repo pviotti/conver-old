@@ -20,7 +20,7 @@ Currently, Conver can check the following consistency models: Monotonic Reads, M
 Read-your-writes, PRAM, Writes-follow-reads, Causal and Linearizability (with chosen linearization points).  
 
 Besides a textual output, Conver generates a visualization of the executions,
-highlighting possible consistency anomalies and violations of consistency models.
+highlighting possible violations of consistency models.
 
 ![Conver execution](/ex-mock.png?raw=true)
 
@@ -34,16 +34,14 @@ Requirements:
 
 To build:
 
-    erl -make
+    $ ./do.sh make
 
 To run a simple execution:
 
-    erl -pa ./ebin -eval "cv_main:run(5, mock)." -s init stop -noshell
+    $ ./do.sh run 3 mock
 
 where 5 is the number of client processes, and "mock" is the name of the store under test
 (in this case, a dummy in-memory store consisting of Erlang's *ets*).  
-After the execution, Conver prints the outcome to stdout, and draws the corresponding graph
-to a file in the current directory named as `client_type.png`.
 
 To run tests with PropEr:
 

@@ -1,4 +1,4 @@
--module(cv_tester).
+-module(conver_tester).
 -compile([debug_info]).
 
 -include("conver.hrl").

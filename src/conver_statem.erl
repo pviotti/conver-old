@@ -1,4 +1,4 @@
--module(cv_statem).
+-module(conver_statem).
 
 -ifdef(PROPER).
 
@@ -15,7 +15,7 @@
 
 -record(state, {val  :: integer()}).
 
--define(SERVER, cv_client_mock).
+-define(SERVER, conver_client_mock).
 
 %%--------------------------------------------------------------------
 %%% Statem callbacks

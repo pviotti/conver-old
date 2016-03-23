@@ -1,0 +1,15 @@
+{application, conver,
+ [{description, "Verification of consistency models."},
+  {vsn, "0.0.1"},
+  {registered, []},
+  {applications,
+   [kernel,
+    stdlib
+   ]},
+  {env,[]},
+  {modules, []},
+
+  {maintainers,["Paolo Viotti"]},
+  {links,[{"Github","https://github.com/pviotti/conver"}]},
+  {licenses,["Apache"]}
+ ]}.

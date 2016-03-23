@@ -1,13 +1,19 @@
--module(cv_main).
+-module(conver).
 
--export([run/2]).
+%% API exports
+-export([main/2]).
 
 -define(ETS_TABLE, ops_db).
 
 
-run(Num, Store) ->
+%%====================================================================
+%% API functions
+%%====================================================================
+
+main(Num, StoreAtom) ->
   % Initialize store
-  StoreModule = list_to_atom("cv_client_" ++ atom_to_list(Store)),
+  Store = atom_to_list(StoreAtom),
+  StoreModule = list_to_atom("conver_client_" ++ Store),
   erlang:apply(StoreModule, initialize, [ok]),
 
   % Initialize ETS table to collect results
@@ -17,11 +23,16 @@ run(Num, Store) ->
   AtomIds = [list_to_atom([X]) || X <- lists:seq($a,$a+Num-1)],
   StartTime = erlang:monotonic_time(nano_seconds),
   TesterPids = proplists:get_all_values(ok,
-    [cv_tester:start(X, StoreModule, StartTime) || X <- AtomIds]),
+    [conver_tester:start(X, StoreModule, StartTime) || X <- AtomIds]),
   process_flag(trap_exit, true),
   lists:map(fun(X) -> erlang:monitor(process, X) end, TesterPids),
-  loop(Num, {StartTime,Store}).
+  loop(Num, {StartTime,Store}),
+  erlang:halt(0).
 
+
+%%====================================================================
+%% Internal functions
+%%====================================================================
 
 loop(Num, {StartTime,Store}) ->
   receive
@@ -31,8 +42,8 @@ loop(Num, {StartTime,Store}) ->
         1 ->
           EndTime = erlang:monotonic_time(nano_seconds),
           OpList = ets:tab2list(?ETS_TABLE),
-          OpListChecked = cv_consistency:check_consistency(OpList),
-          cv_vis:draw_execution(OpListChecked, EndTime-StartTime, Store);
+          OpListChecked = conver_consistency:check_consistency(OpList),
+          conver_vis:draw_execution(OpListChecked, EndTime-StartTime, Store);
         _ ->
           loop(Num-1, {StartTime,Store})
       end;

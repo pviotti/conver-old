@@ -1,4 +1,4 @@
--module(cv_consistency).
+-module(conver_consistency).
 
 -include("conver.hrl").
 
