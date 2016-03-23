@@ -15,7 +15,7 @@
 
 -define(ETS_TABLE, ops_db).
 
--define(MAX_OP_INTERVAL, 600).  % max inter-operation interval
--define(MEAN_OPS, 6).           % mean of uniformly distributed number of operations
+-define(MAX_OP_INTERVAL, 50).  % max inter-operation interval
+-define(MEAN_OPS, 10).           % mean of uniformly distributed number of operations
 -define(SIGMA_OPS, 2).          % sigma of uniformly distributed number of operations
 -define(READ_PROBABILITY, 2).   % 1 out of X is a read
