@@ -1,1 +1,5 @@
-[{<<"proper">>,{pkg,<<"proper">>,<<"1.1.1-beta">>},0}].
+[{<<"color">>,
+  {git,"https://github.com/julianduque/erlang-color.git",
+       {ref,"a83c98a8ec5679626799446ddb29668044e20e30"}},
+  0},
+ {<<"proper">>,{pkg,<<"proper">>,<<"1.1.1-beta">>},0}].

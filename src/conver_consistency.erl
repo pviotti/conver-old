@@ -30,15 +30,15 @@ check_consistency(Ops) ->
   IsLinearizable = IsCausal andalso IsRealTime andalso
     IsRValF andalso is_subset(G, vis, ar),
 
-  io:format("~nMR: ~p~n", [IsMR]),
-  io:format("RYW: ~p~n", [IsRYW]),
-  io:format("MW: ~p~n", [IsMW]),
-  io:format("WFR: ~p~n", [IsWFR]),
-  io:format("PRAM: ~p~n", [IsPRAM]),
-  io:format("Causal: ~p~n", [IsCausal]),
-  io:format("RealTime: ~p~n", [IsRealTime]),
-  io:format("RVal(F): ~p~n", [IsRValF]),
-  io:format("Linearizable: ~p~n~n", [IsLinearizable]),
+  io:format("~nMR: ~s~n", [print_bool(IsMR)]),
+  io:format("RYW: ~s~n", [print_bool(IsRYW)]),
+  io:format("MW: ~s~n", [print_bool(IsMW)]),
+  io:format("WFR: ~s~n", [print_bool(IsWFR)]),
+  io:format("PRAM: ~s~n", [print_bool(IsPRAM)]),
+  io:format("Causal: ~s~n", [print_bool(IsCausal)]),
+  io:format("RealTime: ~s~n", [print_bool(IsRealTime)]),
+  io:format("RVal(F): ~s~n", [print_bool(IsRValF)]),
+  io:format("Linearizable: ~s~n~n", [print_bool(IsLinearizable)]),
 
   OpsChecked = build_checked_proplist(G, Ops),
   io:format("Ar as list: ~p~n~n", [ArLst]),
@@ -54,6 +54,10 @@ build_checked_proplist(G, Ops) ->
   [{Proc, lists:sort(fun cmp_rb/2, [FunGetMarkedOp(Op) ||
     Op <- digraph:vertices(G), Op#op.proc == Proc])}
     || Proc <- proplists:get_keys(Ops)].
+
+
+print_bool(true) -> color:green("PASS");
+print_bool(false) -> color:red("FAIL").
 
 
 %% Consistency checks
