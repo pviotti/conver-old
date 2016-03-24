@@ -8,42 +8,25 @@
 
 %%% Client API
 initialize(_Args) ->
-  ok.
+  {ok, Pid} = riakc_pb_socket:start_link("127.0.0.1", 10017),
+  pong = riakc_pb_socket:ping(Pid),
+  register(riak_proc, Pid),
 
-read(Key) ->
-  ok.
+  Object = riakc_obj:new(<<"bucket">>, <<"key">>, integer_to_binary(0)),
+  riakc_pb_socket:put(whereis(riak_proc), Object),
+  riakc_pb_socket:set_bucket(Pid, <<"bucket">>, [{last_write_wins, true},
+    {consistent, false}, {allow_mult, false}]).
 
-write(Key, Val) ->
-  ok.
+read(_Key) ->
+  {ok, Fetched} = riakc_pb_socket:get(whereis(riak_proc), <<"bucket">>, <<"key">>),
+  binary_to_integer(riakc_obj:get_value(Fetched)).
 
-delete(Key) ->
-  ok.
+write(_Key, Val) ->
+  Object = riakc_obj:new(<<"bucket">>, <<"key">>, integer_to_binary(Val)),
+  riakc_pb_socket:put(whereis(riak_proc), Object).
+
+delete(_Key) ->
+  riakc_pb_socket:delete(whereis(riak_proc), <<"bucket">>, <<"key">>).
 
 terminate() ->
   ok.
-
-
-connect() ->
-  riakc_pb_socket:start_link("127.0.0.1", 10017).
-
-ping(Pid) ->
-  riakc_pb_socket:ping(Pid).
-
-ls(Pid, Bucket) ->
-  riakc_pb_socket:list_keys(Pid, Bucket).
-
-put(Pid, Bucket, Key, Value) ->
-  Obj1 = riakc_obj:new(Bucket, Key, Value),
-  riakc_pb_socket:put(Pid, Obj1).
-
-get(Pid, Bucket, Key) ->
-  {ok, Fetched} = riakc_pb_socket:get(Pid, Bucket, Key),
-  riakc_obj:get_value(Fetched).
-
-update(Pid, Bucket, Key, Value) ->
-  {ok, Fetched} = riakc_pb_socket:get(Pid, Bucket, Key),
-  UpdatedObj = riakc_obj:update_value(Fetched, Value),
-  riakc_pb_socket:put(Pid, UpdatedObj, [return_body]).
-
-delete(Pid, Bucket, Key) ->
-  riakc_pb_socket:delete(Pid, Bucket, Key).

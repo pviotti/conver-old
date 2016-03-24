@@ -7,20 +7,20 @@ Conver verifies implementations of the most common non-transactional consistency
 
 Conver performs random reads and writes on the chosen distributed store
 and records their outcomes.  
-Using the outcomes of operations, Conver checks whether the execution respected
+Using the operations outcomes, it checks whether the execution respected
 some of the most common storage consistency semantics.
 
 Datastores supported:
 
  * [x] Dummy (in-memory *ets*)
- * [ ] Riak
- * [ ] ZooKeeper
+ * [x] ZooKeeper
+ * [x] Riak
 
-Currently, Conver can check the following consistency models: Monotonic Reads, Monotonic Writes,
+Currently, Conver can verify the following consistency models: Monotonic Reads, Monotonic Writes,
 Read-your-writes, PRAM, Writes-follow-reads, Causal and Linearizability (with chosen linearization points).  
 
-Besides a textual output, Conver generates a visualization of the executions,
-highlighting possible violations of consistency models.
+Besides textual output, Conver generates a visualization of the executions,
+highlighting the violations of consistency models.
 
 ![Conver execution](/ex-mock.png?raw=true)
 
@@ -31,12 +31,14 @@ Once installed Erlang/OTP (R18+), to build Conver issue:
 
     $ ./do.sh make
 
-To run a simple execution:
+To make Conver test a simple execution:
 
-    $ ./do.sh run 3 mock
+    $ ./do.sh run <num> <mock|zk|riak>
 
-where 3 is the number of client processes, and "mock" is the name of the store under test
-(in this case, a dummy in-memory store consisting of Erlang's *ets*).  
+where `num` is the number of client processes (e.g., 3),
+followed by a string that identifies the store under test
+(`mock` for a dummy in-memory store consisting of Erlang's *ets*,
+`zk` for ZooKeeper, `riak` for Riak).  
 
 To run a demonstrative test of the dummy datastore using PropEr:
 
@@ -45,13 +47,10 @@ To run a demonstrative test of the dummy datastore using PropEr:
 
 ## Documentation
 
-To have an overview of the consistency models checked by Conver, see [this survey][survey].  
+To have an overview of the consistency models verified by Conver, see [this survey][survey].  
 The approach implemented in Conver has been described in [this PaPoC 2016 paper][papoc].  
 
-Related projects:
-
- * [Jepsen][jepsen]
- * [Hermitage][hermitage]
+Related projects: [Jepsen][jepsen], [Hermitage][hermitage].
 
 ## Authors and license
 
