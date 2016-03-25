@@ -1,5 +1,8 @@
 -module(conver_client).
--export([behaviour_info/1]).
 
-behaviour_info(callbacks) -> [{initialize,1}, {read,1}, {write,2}, {delete,1}, {terminate,0}];
-behaviour_info(_) -> undefined.
+
+-callback initialize([term()]) -> term().
+-callback read(atom()) -> integer().
+-callback write(atom(), integer()) -> term().
+-callback delete(atom()) -> term().
+-callback terminate() -> term().

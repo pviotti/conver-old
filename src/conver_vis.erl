@@ -4,6 +4,10 @@
 
 -export([draw_execution/3]).
 
+
+%%% API
+
+-spec draw_execution([{atom(), [op()]}], integer(), string()) -> term().
 draw_execution(Ops, Duration, StoreName) ->
   NProc = length(Ops),
 
@@ -49,9 +53,9 @@ draw_execution(Ops, Duration, StoreName) ->
   os:cmd("see " ++ FileName ++ " &"). % XXX
 
 
+%%% Internal functions
 
-%% Private functions
-
+-spec convert_ops_details(fun((integer()) -> integer()), [op()], [tuple()]) -> [tuple()].
 convert_ops_details(_FScaleTime, [], Acc) -> Acc;
 convert_ops_details(FScaleTime, [H|T], Acc) ->
   {Color, FunRect} = case length(H#op.notes) of
@@ -60,12 +64,13 @@ convert_ops_details(FScaleTime, [H|T], Acc) ->
             0 -> {egd:color(black), fun egd:rectangle/4} ;
             1 -> {egd:color({223,123,123}), fun egd:filledRectangle/4};
             2 -> {egd:color({178,66,66}), fun egd:filledRectangle/4};
-            3 -> {egd:color({212,17,17}), fun egd:filledRectangle/4}
+            _ -> {egd:color({212,17,17}), fun egd:filledRectangle/4}
           end,
   Op = {FScaleTime(H#op.start_time), FScaleTime(H#op.end_time),
     get_op_label(H#op.type, H#op.arg), Color, FunRect},
   convert_ops_details(FScaleTime, T, [Op|Acc]).
 
+-spec get_op_label(op_type(), integer()) -> string().
 get_op_label(Type, Arg) ->
   case Type of
     read -> "R:" ++ integer_to_list(Arg);

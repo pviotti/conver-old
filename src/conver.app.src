@@ -11,5 +11,5 @@
 
   {maintainers,["Paolo Viotti"]},
   {links,[{"Github","https://github.com/pviotti/conver"}]},
-  {licenses,["Apache"]}
+  {licenses,["Apache 2.0"]}
  ]}.

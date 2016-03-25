@@ -6,7 +6,8 @@
 
 %% TODO
 
-%%% Client API
+%%% conver_client callbacks
+
 initialize(_Args) ->
   {ok, Pid} = riakc_pb_socket:start_link("127.0.0.1", 10017),
   pong = riakc_pb_socket:ping(Pid),
@@ -29,4 +30,4 @@ delete(_Key) ->
   riakc_pb_socket:delete(whereis(riak_proc), <<"bucket">>, <<"key">>).
 
 terminate() ->
-  ok.
+  riakc_pb_socket:stop(whereis(riak_proc)).

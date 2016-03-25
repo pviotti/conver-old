@@ -12,7 +12,8 @@
   handle_info/2, code_change/3, terminate/2]).
 
 
-%%% Client API
+%%% conver_client callbacks
+
 initialize(_Args) ->
   {ok, Pid} = gen_server:start_link(?MODULE, [], []),
   register(db_proc, Pid).
@@ -29,7 +30,10 @@ delete(Key) ->
 terminate() ->
   gen_server:call(whereis(db_proc), terminate).
 
-%%% Server functions
+%%%===================================================================
+%%% gen_server callbacks
+%%%===================================================================
+
 init([]) ->
   ets:new(?MODULE, [set, named_table]),
   ets:insert(?MODULE, {key, 0}),

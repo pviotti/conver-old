@@ -8,13 +8,14 @@
 
 %% TODO connection string as conf
 
-%%% Client API
+%%% conver_client callbacks
+
 initialize(_Args) ->
   erlzk:start(),
   {ok, Pid} = erlzk:connect([{"localhost", 2181}], 30000),
   case erlzk:exists(Pid, "/a") of
     {ok, _Stat} -> erlzk:set_data(Pid, "/key", integer_to_binary(0), -1);
-    {error, no_node} -> erlzk:create(Pid, "/key")
+    {error, no_node} -> erlzk:create(Pid, "/key", integer_to_binary(0))
   end,
   register(zk_proc, Pid).
 

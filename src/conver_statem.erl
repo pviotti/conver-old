@@ -1,29 +1,34 @@
 -module(conver_statem).
 
 -behaviour(proper_statem).
+-dialyzer(no_undefined_callbacks).
 
 -include_lib("proper/include/proper.hrl").
 
 %% API
--export([]).
-
 -export([test/0, sample/0]).
--export([initial_state/0, command/1, precondition/2, postcondition/3,
-  next_state/3]).
+
+%% proper_statem callbacks
+-export([initial_state/0, command/1,
+  precondition/2, postcondition/3, next_state/3]).
 
 -record(state, {val  :: integer()}).
 
 -define(SERVER, conver_client_mock).
 
-%%--------------------------------------------------------------------
-%%% Statem callbacks
-%%--------------------------------------------------------------------
+
+%% API
 
 test() ->
   proper:quickcheck(?MODULE:prop_consistency()).
 
 sample() ->
   proper_gen:pick(commands(?MODULE)).
+
+
+%%%===================================================================
+%%% Properties
+%%%===================================================================
 
 prop_consistency() ->
   ?FORALL(Cmds, commands(?MODULE),
@@ -48,6 +53,11 @@ prop_paral_consistency() ->
           [Sequential,Parallel,Result]),
           aggregate(command_names(Cmds), Result =:= ok))
       end)).
+
+
+%%%===================================================================
+%%% proper_statem callbacks
+%%%===================================================================
 
 initial_state() ->
   #state{val = 0}.
