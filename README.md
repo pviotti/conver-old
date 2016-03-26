@@ -13,7 +13,7 @@ defined as first-order logic predicates.
 
 The approach implemented in Conver has been described in [this PaPoC 2016 paper][papoc].  
 To have an overview of the consistency models verified by Conver, see [this survey][survey].  
-Related projects: [Jepsen][jepsen], [Hermitage][hermitage].  
+Similar projects: [Jepsen][jepsen], [Hermitage][hermitage].  
 
 Datastores supported:
 
@@ -34,11 +34,11 @@ highlighting the violations of consistency models.
 
 Once installed Erlang/OTP (R18+), to build Conver issue:
 
-    $ ./do.sh make
+    $ make
 
 To make Conver test a simple execution:
 
-    $ ./do.sh run <num> <mock|zk|riak>
+    $ ./conver run <num> <mock|zk|riak>
 
 where `num` is the number of client processes (e.g., 3),
 followed by a string that identifies the store under test
@@ -47,7 +47,7 @@ followed by a string that identifies the store under test
 
 To run a demonstrative test of the dummy datastore using PropEr:
 
-    $ ./do.sh proper
+    $ ./conver proper
 
 
 ## Authors and license

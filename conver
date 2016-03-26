@@ -23,7 +23,6 @@ fi
 
 case $1 in
 proper)
-    make compile >/dev/null
     erl -pa ./_build/default/lib/*/ebin -eval "conver_statem:test()." -s init stop -noshell
     ;;
 run)
@@ -32,7 +31,6 @@ run)
         usage
         exit 1
     else
-        make compile >/dev/null
         erl -pa ./_build/default/lib/*/ebin -noshell -eval "conver:main($2, $3)." -s init stop
     fi    
     ;;
