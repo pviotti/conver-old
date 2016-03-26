@@ -1,14 +1,13 @@
 #!/bin/bash
 #----------------------------------------------------------------------------
-# DATE        : 2016, March 23rd
+# DATE        : March 2016
 # AUTHOR      : Paolo Viotti
-# DESCRIPTION : Bash script to compile and run Conver tests
+# DESCRIPTION : Bash script to run Conver tests
 #----------------------------------------------------------------------------
 
 usage() {
-  echo "Usage: ./`basename $0` make|clean|run <nc> <store>|proper"
-  echo "    make: compile Conver"
-  echo "    clean: remove compiled artifacts"
+  echo "Usage: ./`basename $0` proper|run <nc> <store>"
+  echo ""
   echo "    proper: run PropEr test on mock datastore"
   echo "    run <nc> <store>: run Conver"
   echo "        nc: number of clients"
@@ -23,14 +22,8 @@ then
 fi
 
 case $1 in
-make)
-    ./rebar3 compile
-    ;;
-clean)
-    ./rebar3 clean
-    ;;
 proper)
-    ./rebar3 compile >/dev/null
+    make compile >/dev/null
     erl -pa ./_build/default/lib/*/ebin -eval "conver_statem:test()." -s init stop -noshell
     ;;
 run)
@@ -39,7 +32,7 @@ run)
         usage
         exit 1
     else
-        ./rebar3 compile >/dev/null
+        make compile >/dev/null
         erl -pa ./_build/default/lib/*/ebin -noshell -eval "conver:main($2, $3)." -s init stop
     fi    
     ;;

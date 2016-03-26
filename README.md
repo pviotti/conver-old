@@ -5,10 +5,15 @@ Conver verifies implementations of the most common non-transactional consistency
 
 ## Features
 
-Conver performs random reads and writes on the chosen distributed store
-and records their outcomes.  
-Using the operations outcomes, it checks whether the execution respected
-some of the most common storage consistency semantics.
+Conver spawns client processes that perform concurrent reads 
+and writes on the distributed store, and records their outcomes.  
+Then it builds graph entities that express ordering and mutual visibility of operations.  
+Finally, Conver uses these graph entities to check consistency semantics
+defined as first-order logic predicates.  
+
+The approach implemented in Conver has been described in [this PaPoC 2016 paper][papoc].  
+To have an overview of the consistency models verified by Conver, see [this survey][survey].  
+Related projects: [Jepsen][jepsen], [Hermitage][hermitage].  
 
 Datastores supported:
 
@@ -44,13 +49,6 @@ To run a demonstrative test of the dummy datastore using PropEr:
 
     $ ./do.sh proper
 
-
-## Documentation
-
-To have an overview of the consistency models verified by Conver, see [this survey][survey].  
-The approach implemented in Conver has been described in [this PaPoC 2016 paper][papoc].  
-
-Related projects: [Jepsen][jepsen], [Hermitage][hermitage].
 
 ## Authors and license
 
