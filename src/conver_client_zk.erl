@@ -4,32 +4,34 @@
 
 -behaviour(conver_client).
 
--export([initialize/1, read/1, write/2, delete/1, terminate/0]).
+-export([initialize/1, read/2, write/3, delete/2, terminate/1]).
 
-%% TODO connection string as conf
+%% TODO move server connection parameters
 
 %%% conver_client callbacks
 
-initialize(_Args) ->
+initialize(ProcId) ->
+  ServersLst = [{"localhost", 2181}, {"localhost", 2182}, {"localhost", 2183}],
+  Server = lists:nth((hd(atom_to_list(ProcId)) rem length(ServersLst))+1, ServersLst),
+  io:format("Zk client connecting to server: ~p.~n", [Server]),
   erlzk:start(),
-  {ok, Pid} = erlzk:connect([{"localhost", 2181}], 30000),
+  {ok, Pid} = erlzk:connect([Server], 30000),
   case erlzk:exists(Pid, "/a") of
     {ok, _Stat} -> erlzk:set_data(Pid, "/key", integer_to_binary(0), -1);
     {error, no_node} -> erlzk:create(Pid, "/key", integer_to_binary(0))
   end,
-  register(zk_proc, Pid).
+  Pid.
 
-read(_Key) ->
-  {ok, {Val, _Stat}} = erlzk:get_data(whereis(zk_proc), "/key"),
+read(Pid, _Key) ->
+  {ok, {Val, _Stat}} = erlzk:get_data(Pid, "/key"),
   binary_to_integer(Val).
 
-write(_Key, Val) ->
-  {ok, _Stat} = erlzk:set_data(whereis(zk_proc), "/key", integer_to_binary(Val), -1).
+write(Pid, _Key, Val) ->
+  {ok, _Stat} = erlzk:set_data(Pid, "/key", integer_to_binary(Val), -1).
 
-delete(_Key) ->
-  erlzk:delete(whereis(zk_proc), "/key").
+delete(Pid, _Key) ->
+  erlzk:delete(Pid, "/key").
 
-terminate() ->
-  erlzk:delete(whereis(zk_proc), "/key"),
-  erlzk:close(whereis(zk_proc)).
+terminate(Pid) ->
+  erlzk:close(Pid).
 

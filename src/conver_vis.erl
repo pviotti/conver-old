@@ -21,7 +21,7 @@ draw_execution(Ops, Duration, StoreName) ->
   % Processes lines
   LineLength = W - (HMargin * 2),
   EbinDir = filename:dirname(code:which(?MODULE)), % HACK to get into priv dir
-  Filename = filename:join([filename:dirname(EbinDir),"priv","fonts","Helvetica14.wingsfont"]),
+  Filename = filename:join([filename:dirname(EbinDir),"priv","Helvetica14.wingsfont"]),
   Font = egd_font:load(Filename),
   _ = [{egd:text(Im, {trunc(HMargin/2), trunc(H/(2*NProc)+(X-1)*(H/NProc))},
         Font, string:to_upper(atom_to_list(ProcName)), egd:color(black)),

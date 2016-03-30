@@ -13,7 +13,7 @@
 
 %%% API
 
--spec start(atom(), atom(), integer()) ->
+-spec start(atom(), string(), integer()) ->
   {ok,pid()} | ignore | {error,{already_started,pid()} | term()}.
 start(Proc, Store, InitTime) ->
   gen_server:start({local, Proc}, ?MODULE, [Proc, Store, InitTime], []).
@@ -23,13 +23,16 @@ start(Proc, Store, InitTime) ->
 %%% gen_server callbacks
 %%%===================================================================
 
-init([Proc, StoreModule, InitTime]) ->
+init([Proc, Store, InitTime]) ->
   process_flag(trap_exit, true),    % To know when the parent shuts down
   random:seed(erlang:timestamp()),  % To do once per process
   Timeout = random:uniform(?MAX_OP_INTERVAL),
   NumOp = rnd_normal(?MEAN_OPS, ?SIGMA_OPS),
-  %io:format("C-~p init, n. ops: ~p~n", [Id, NumOp]),
-  {ok, #state{proc=Proc, store=StoreModule, t0=InitTime, num_op=NumOp, ops=[]}, Timeout}.
+  ClientModule = get_client_module(Store),
+  CPid = erlang:apply(ClientModule, initialize, [Proc]),  % Initialize store client
+  io:format("C-~p init, CPid ~p, n. ops: ~p~n", [Proc, CPid, NumOp]),
+  {ok, #state{proc=Proc, store=ClientModule, cpid=CPid,
+    t0=InitTime, num_op=NumOp, ops=[]}, Timeout}.
 
 handle_call(_Message, _From, S) -> {noreply, S, random:uniform(?MAX_OP_INTERVAL)}.
 
@@ -37,17 +40,17 @@ handle_cast(_Message, S) -> {noreply, S, random:uniform(?MAX_OP_INTERVAL)}.
 
 handle_info(timeout, S = #state{num_op=0}) ->
   {stop, normal, S};
-handle_info(timeout, S = #state{proc=Proc, t0=T0, num_op=NumOp, ops=Ops}) ->
+handle_info(timeout, S = #state{proc=Proc, cpid=CPid, t0=T0, num_op=NumOp, ops=Ops}) ->
   StartTime = erlang:monotonic_time(nano_seconds) - T0,
   case random:uniform(?READ_PROBABILITY) of   % TODO handle timeouts and errors
     1 ->
       OpType = read,
-      Arg = erlang:apply(S#state.store, read, [key]),
+      Arg = erlang:apply(S#state.store, read, [CPid, key]),
       io:format("P~s:R:~p. ",[Proc,Arg]);
     _ ->
       OpType = write,
       Arg = erlang:unique_integer([monotonic,positive]), % unique value, monotonic
-      erlang:apply(S#state.store, write, [key, Arg]),
+      erlang:apply(S#state.store, write, [CPid, key, Arg]),
       io:format("P~s:W(~p). ",[Proc,Arg])
   end,
   EndTime = erlang:monotonic_time(nano_seconds) - T0,
@@ -63,6 +66,7 @@ handle_info(_Message, S) ->
 code_change(_OldVsn, State, _Extra) -> {ok, State}.
 
 terminate(normal, S) ->
+  erlang:apply(S#state.store, terminate, [S#state.cpid]),
   ets:insert(?ETS_TABLE, {S#state.proc, S#state.ops}),
   io:format("P~s terminated.~n",[S#state.proc]);
 terminate(Reason, S) ->
@@ -81,3 +85,7 @@ rnd_normal(Mean, Sigma) ->
   Rv2 = random:uniform(),
   Rho = math:sqrt(-2 * math:log(1-Rv2)),
   abs(trunc(Rho * math:cos(2 * math:pi() * Rv1) * Sigma + Mean)).
+
+-spec get_client_module(string()) -> atom().
+get_client_module(Store) ->
+  list_to_atom("conver_client_" ++ Store).

@@ -3,11 +3,11 @@
 -behaviour(conver_client).
 -behaviour(gen_server).
 
--define(MAX_OP_LATENCY, 650).  % max operation latency
+-define(MAX_OP_LATENCY, 650).     % max operation latency
 -define(MISREAD_PROBABILITY, 3).  % 1 out of X reads a previous value
                                   % to simulate non-lin behavior
 
--export([initialize/1, read/1, write/2, delete/1, terminate/0]).
+-export([initialize/1, read/2, write/3, delete/2, terminate/1]).
 -export([init/1, handle_call/3, handle_cast/2,
   handle_info/2, code_change/3, terminate/2]).
 
@@ -16,26 +16,31 @@
 
 initialize(_Args) ->
   {ok, Pid} = gen_server:start_link(?MODULE, [], []),
-  register(db_proc, Pid).
+  Pid.
 
-read(Key) ->
-  gen_server:call(whereis(db_proc), {read, Key}).
+read(Pid, Key) ->
+  gen_server:call(Pid, {read, Key}).
 
-write(Key, Val) ->
-  gen_server:call(whereis(db_proc), {write, Key, Val}).
+write(Pid, Key, Val) ->
+  gen_server:call(Pid, {write, Key, Val}).
 
-delete(Key) ->
-  gen_server:call(whereis(db_proc), {delete, Key}).
+delete(Pid, Key) ->
+  gen_server:call(Pid, {delete, Key}).
 
-terminate() ->
-  gen_server:call(whereis(db_proc), terminate).
+terminate(Pid) ->
+  gen_server:call(Pid, terminate).
+
 
 %%%===================================================================
 %%% gen_server callbacks
 %%%===================================================================
 
 init([]) ->
-  ets:new(?MODULE, [set, named_table]),
+  try
+    ets:new(?MODULE, [set, named_table, public])
+  catch
+    error:badarg -> ok
+  end,
   ets:insert(?MODULE, {key, 0}),
   {ok, []}.
 
@@ -69,7 +74,7 @@ handle_call(terminate, _From, _State) ->
 handle_cast(_Msg, _State) -> {noreply, ok}.
 
 terminate(normal, _State) ->
-  ets:delete(?MODULE).
+  ok.
 
 handle_info(_Msg, State) ->  {noreply, State}.
 code_change(_OldVsn, State, _Extra) -> {ok, State}.

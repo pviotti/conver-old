@@ -34,9 +34,9 @@ prop_consistency() ->
   ?FORALL(Cmds, commands(?MODULE),
     ?TRAPEXIT(
       begin
-        ?SERVER:initialize(ok),
+        Pid = ?SERVER:initialize(ok),
         {History,State,Result} = run_commands(?MODULE, Cmds),
-        ?SERVER:terminate(),
+        ?SERVER:terminate(Pid),
         ?WHENFAIL(io:format("History: ~w~nState: ~w\nResult: ~w~n",
           [History,State,Result]),
           aggregate(command_names(Cmds), Result =:= ok))
@@ -46,9 +46,9 @@ prop_paral_consistency() ->
   ?FORALL(Cmds, proper_statem:parallel_commands(?MODULE),
     ?TRAPEXIT(
       begin
-        ?SERVER:initialize(ok),
+        Pid = ?SERVER:initialize(ok),
         {Sequential,Parallel,Result} = proper_statem:run_parallel_commands(?MODULE, Cmds),
-        ?SERVER:terminate(),
+        ?SERVER:terminate(Pid),
         ?WHENFAIL(io:format("History: ~w~nState: ~w\nResult: ~w~n",
           [Sequential,Parallel,Result]),
           aggregate(command_names(Cmds), Result =:= ok))

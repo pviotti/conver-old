@@ -9,3 +9,5 @@ compile:
 clean:
 	$(REBAR) clean
 
+dialyzer:
+	$(REBAR) dialyzer

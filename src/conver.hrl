@@ -26,6 +26,7 @@
 -record(state, {
   proc :: atom(),               % process id
   store :: atom(),              % name of datastore client module
+  cpid :: pid(),                % store client Pid
   t0 :: integer(),              % execution start time
   num_op :: non_neg_integer(),  % number of operations still to be issued
   ops = [] :: [op()]            % list of operations already issued
