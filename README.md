@@ -27,7 +27,7 @@ Read-your-writes, PRAM, Writes-follow-reads, Causal and Linearizability (with ch
 Besides textual output, Conver generates a visualization of the executions,
 highlighting the violations of consistency models.
 
-![Conver execution](/ex-mock.png?raw=true)
+![Conver execution](http://i.imgur.com/fd3G2PX.png)
 
 
 ## Getting started
