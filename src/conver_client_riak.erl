@@ -2,19 +2,16 @@
 
 -behavior(conver_client).
 
--export([initialize/1, read/2, write/3, delete/2, terminate/1]).
+-export([init/2, read/2, write/3, delete/2, terminate/1]).
 
-%% TODO move server connection parameters
 
 %%% conver_client callbacks
 
-initialize(ProcId) ->
-  ServersLst = ["172.17.0.2","172.17.0.3","172.17.0.4"],
-  Server = lists:nth((hd(atom_to_list(ProcId)) rem length(ServersLst))+1, ServersLst),
+init(ProcId, Conf) ->
+  Server = lists:nth((hd(atom_to_list(ProcId)) rem length(Conf))+1, Conf),
   io:format("Riak client connecting to server: ~p.~n", [Server]),
-  {ok, Pid} = riakc_pb_socket:start_link(Server, 8087),
-  pong = riakc_pb_socket:ping(Pid),
-
+  {ok, Pid} = riakc_pb_socket:start_link(element(1,Server), element(2,Server)),
+  %% TODO test if bucket is already initialized
   Object = riakc_obj:new(<<"bucket">>, <<"key">>, integer_to_binary(0)),
   riakc_pb_socket:put(Pid, Object),
   riakc_pb_socket:set_bucket(Pid, <<"bucket">>, [{last_write_wins, true},

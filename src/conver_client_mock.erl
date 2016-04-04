@@ -7,15 +7,21 @@
 -define(MISREAD_PROBABILITY, 3).  % 1 out of X reads a previous value
                                   % to simulate non-lin behavior
 
--export([initialize/1, read/2, write/3, delete/2, terminate/1]).
+-export([init/2, read/2, write/3, delete/2, terminate/1]).
 -export([init/1, handle_call/3, handle_cast/2,
   handle_info/2, code_change/3, terminate/2]).
 
 
 %%% conver_client callbacks
 
-initialize(_Args) ->
-  {ok, Pid} = gen_server:start_link(?MODULE, [], []),
+init(_Proc, _Conf) ->
+  try
+    ets:new(?MODULE, [set, named_table, public])
+  catch
+    error:badarg -> ok
+  end,
+  ets:insert(?MODULE, {key, 0}),
+  {ok, Pid} = gen_server:start(?MODULE, [], []),
   Pid.
 
 read(Pid, Key) ->
@@ -36,12 +42,6 @@ terminate(Pid) ->
 %%%===================================================================
 
 init([]) ->
-  try
-    ets:new(?MODULE, [set, named_table, public])
-  catch
-    error:badarg -> ok
-  end,
-  ets:insert(?MODULE, {key, 0}),
   {ok, []}.
 
 handle_call({write, Key, Val}, _From, _State) ->
@@ -53,10 +53,10 @@ handle_call({read, Key}, _From, _State) ->
   timer:sleep(random:uniform(?MAX_OP_LATENCY div 2)),
   case random:uniform(?MISREAD_PROBABILITY) of
     1 ->
-      ResCorrect = ets:lookup_element(?MODULE, Key, 2),
-      Res = case ResCorrect of
+      CorrectRes = ets:lookup_element(?MODULE, Key, 2),
+      Res = case CorrectRes of
               0 -> 0;
-              _ -> ResCorrect -2
+              _ -> CorrectRes -2
             end;
     _ ->
       Res = ets:lookup_element(?MODULE, Key, 2)
@@ -74,7 +74,9 @@ handle_call(terminate, _From, _State) ->
 handle_cast(_Msg, _State) -> {noreply, ok}.
 
 terminate(normal, _State) ->
-  ok.
+  ok;
+terminate(Reason, S) ->
+  io:format("ClientMock terminated, reason: ~p. State: ~p~n",[Reason, S]).
 
 handle_info(_Msg, State) ->  {noreply, State}.
 code_change(_OldVsn, State, _Extra) -> {ok, State}.

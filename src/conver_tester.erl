@@ -4,7 +4,7 @@
 
 -behavior(gen_server).
 
--export([start/3]).
+-export([init/3, start/4]).
 
 %% gen_server callbacks
 -export([init/1,  handle_call/3, handle_cast/2,
@@ -13,26 +13,29 @@
 
 %%% API
 
--spec start(atom(), string(), integer()) ->
+-spec init(atom(), atom(), term()) -> pid().  % TODO catch init errors
+init(Proc, Store, StoreConf) ->
+  ClientModule = get_client_module(Store),
+  erlang:apply(ClientModule, init, [Proc, StoreConf]).  % Initialize store client
+
+-spec start(atom(), atom(), pid(), integer()) ->
   {ok,pid()} | ignore | {error,{already_started,pid()} | term()}.
-start(Proc, Store, InitTime) ->
-  gen_server:start({local, Proc}, ?MODULE, [Proc, Store, InitTime], []).
+start(Proc, Store, ClientPid, StartTime) ->
+  gen_server:start({local, Proc}, ?MODULE, [Proc, Store, ClientPid, StartTime], []).
 
 
 %%%===================================================================
 %%% gen_server callbacks
 %%%===================================================================
 
-init([Proc, Store, InitTime]) ->
-  process_flag(trap_exit, true),    % To know when the parent shuts down
+init([Proc, Store, CPid, StartTime]) ->
   random:seed(erlang:timestamp()),  % To do once per process
   Timeout = random:uniform(?MAX_OP_INTERVAL),
   NumOp = rnd_normal(?MEAN_OPS, ?SIGMA_OPS),
-  ClientModule = get_client_module(Store),
-  CPid = erlang:apply(ClientModule, initialize, [Proc]),  % Initialize store client
   io:format("C-~p init, CPid ~p, n. ops: ~p~n", [Proc, CPid, NumOp]),
+  ClientModule = get_client_module(Store),
   {ok, #state{proc=Proc, store=ClientModule, cpid=CPid,
-    t0=InitTime, num_op=NumOp, ops=[]}, Timeout}.
+    t0=StartTime, num_op=NumOp, ops=[]}, Timeout}.
 
 handle_call(_Message, _From, S) -> {noreply, S, random:uniform(?MAX_OP_INTERVAL)}.
 
@@ -86,6 +89,6 @@ rnd_normal(Mean, Sigma) ->
   Rho = math:sqrt(-2 * math:log(1-Rv2)),
   abs(trunc(Rho * math:cos(2 * math:pi() * Rv1) * Sigma + Mean)).
 
--spec get_client_module(string()) -> atom().
+-spec get_client_module(atom()) -> atom().
 get_client_module(Store) ->
-  list_to_atom("conver_client_" ++ Store).
+  list_to_atom("conver_client_" ++ atom_to_list(Store)).

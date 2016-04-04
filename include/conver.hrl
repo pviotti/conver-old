@@ -1,6 +1,9 @@
 %% ETS table to store execution results of all client processes
 -define(ETS_TABLE, ops_db).
 
+%% Conver configuration file
+-define(CONVER_CONF, "conver.conf").
+
 %% Parameters of execution
 -define(MAX_OP_INTERVAL, 50).   % max inter-operation interval
 -define(MEAN_OPS, 10).          % mean of uniformly distributed number of operations
