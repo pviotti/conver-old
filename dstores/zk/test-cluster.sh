@@ -2,22 +2,20 @@
 
 set -e
 
-RANDOM_CONTAINER_ID=$(docker ps | egrep "pviotti/zookeeper" | cut -d" " -f1 | shuf | head -n1)
-CONTAINER_IP=$(docker inspect -f '{{.NetworkSettings.IPAddress}}' $RANDOM_CONTAINER_ID)
+DOCKER_ZK_CLUSTER_SIZE=${DOCKER_ZK_CLUSTER_SIZE:-3}
 
-
-function run4lw()                                                                          
-{                                                                                          
+function run4lw() {                                                                                          
   exec 5<>/dev/tcp/$2/$3;echo $1 >&5;cat <&5 | egrep "Mode: "                            
 }                                                                                          
                                                                                             
-function srvr()                                                                            
-{                                                                                          
+function srvr() {                                                                                          
   run4lw srvr $1 $2 2> /dev/null                                                         
 }     
 
 
-echo "172.17.0.2:2181 $(srvr 172.17.0.2 2181)" 
-echo "172.17.0.3:2181 $(srvr 172.17.0.3 2181)" 
-echo "172.17.0.4:2181 $(srvr 172.17.0.4 2181)" 
+for index in $(seq "1" "${DOCKER_ZK_CLUSTER_SIZE}");
+do
+    CONTAINER_IP=$(docker inspect -f '{{.NetworkSettings.Networks.zk.IPAddress}}' zookeeper${index})
+    echo "${CONTAINER_IP}:2181 $(srvr ${CONTAINER_IP} 2181)" 
+done
 
