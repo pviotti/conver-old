@@ -18,12 +18,12 @@ docker network create zk >/dev/null 2>&1
 
 for index in $(seq "1" "${DOCKER_ZK_CLUSTER_SIZE}");
 do
-	docker run -e "MYID=${index}" \
-			   -e "SERVERS=zookeeper1,zookeeper2,zookeeper3" \
-               -h "zookeeper${index}" \
-               --net="zk" \
-		       --name="zookeeper${index}" \
-			   -d pviotti/zookeeper:3.4.8 > /dev/null 2>&1
+	docker run  -e "MYID=${index}" \
+                -e "SERVERS=zookeeper1,zookeeper2,zookeeper3" \
+                -h "zookeeper${index}" \
+                --net="zk" \
+                --name="zookeeper${index}" \
+                -d pviotti/zookeeper:3.4.8 > /dev/null 2>&1
   
   CONTAINER_IP=$(docker inspect -f '{{.NetworkSettings.Networks.zk.IPAddress}}' "zookeeper${index}")
   echo "Started zookeeper${index} (${CONTAINER_IP})"
