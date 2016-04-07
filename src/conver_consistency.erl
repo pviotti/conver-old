@@ -19,9 +19,9 @@ check_consistency(Ops) ->
   build_ordering(OpLst, G, fun cmp_rb/2, rb),
   build_ordering(OpLst, G, fun cmp_vis/2, vis),
 
-  build_ordering(OpLst, G, fun cmp_ar_opmedian/2, ar),
+  build_ordering(OpLst, G, fun cmp_ar/2, ar),
   true = (count_edges(G,ar) == (length(OpLst) * (length(OpLst)-1)) div 2),
-  ArLst = lists:sort(fun cmp_ar_opmedian/2, OpLst),
+  ArLst = lists:sort(fun cmp_ar/2, OpLst),
 
   IsMR = check_monotonic_reads(G, Sessions),
   IsRYW = check_read_your_writes(G, Sessions),
@@ -135,7 +135,12 @@ check_writes_follow_reads(G) ->
   SetVis = sets:from_list(filter_edges_by_rel(G, vis)),
   SetAr = sets:from_list(filter_edges_by_rel(G, ar)),
   SetVisSoRW = sets:union(SetSoRW, SetVis),
-  sets:is_subset(SetVisSoRW, SetAr).
+  case sets:is_subset(SetVisSoRW, SetAr) of
+    true -> true;
+    false ->
+      io:format("WFR anomaly: ~p~n", [sets:subtract(SetVisSoRW, SetAr)]),
+      false
+  end.
 
 
 %% Real-time
@@ -151,16 +156,16 @@ check_rval(G, ArLst) ->
   mark_rval_violations(G, 0, ArLst),
   is_semantics_respected(G, rval).
 
--spec mark_rval_violations(digraph:graph(), integer(), [op()]) -> 'ok'.
+-spec mark_rval_violations(digraph:graph(), op(), [op()]) -> 'ok'.
 mark_rval_violations(_, _, []) -> ok;
-mark_rval_violations(G, LastValueWritten, [H|T]) when H#op.type == read ->
-  case H#op.arg == LastValueWritten of
+mark_rval_violations(G, LastWrite, [H|T]) when H#op.type == read ->
+  case H#op.arg == LastWrite#op.arg of
     true -> ok;
     false -> add_label_to_vertex(G, H, rval)
   end,
-  mark_rval_violations(G, LastValueWritten, T);
+  mark_rval_violations(G, LastWrite, T);
 mark_rval_violations(G, _, [H|T]) when H#op.type == write ->
-  mark_rval_violations(G, H#op.arg, T).
+  mark_rval_violations(G, H, T).
 
 
 -spec is_semantics_respected(digraph:graph(), atom()) -> boolean().
@@ -239,11 +244,34 @@ cmp_vis(Op1, Op2) ->
     Op2#op.type == read andalso
     Op1#op.arg == Op2#op.arg.
 
--spec cmp_ar_opmedian(op(),op()) -> boolean().
-cmp_ar_opmedian(Op1, Op2) ->
-  (Op1#op.start_time + Op1#op.end_time)/2 <
-    (Op2#op.start_time + Op2#op.end_time)/2.
+-spec cmp_ar(op(),op()) -> boolean().
+cmp_ar(Op1, Op2) ->
+  case are_concurrent(Op1, Op2) of
+    false -> cmp_rb(Op1, Op2);
+    true -> %% Concurrent operations
+      if
+        %% Speculative ordering based on operation arguments
+        Op1#op.arg < Op2#op.arg ->
+          true;
+        Op1#op.arg > Op2#op.arg ->
+          false;
 
+        Op1#op.arg == Op2#op.arg, Op1#op.type == Op2#op.type ->   % they can only be two reads, by design
+          Op1#op.proc < Op2#op.proc;                              % use process id to break ties
+        Op1#op.arg == Op2#op.arg, Op1#op.type =/= Op2#op.type ->  % a read and a write with same argument, concurrent
+          Op1#op.type == write                                    % the write goes first
+      end
+  end.
+
+-spec are_concurrent(op(),op()) -> boolean().
+are_concurrent(Op1, Op2) ->
+  not cmp_rb(Op1, Op2) andalso not cmp_rb(Op2, Op1).
+
+%%-spec cmp_ar_opmedian(op(),op()) -> boolean().
+%%cmp_ar_opmedian(Op1, Op2) ->
+%%  (Op1#op.start_time + Op1#op.end_time)/2 <
+%%    (Op2#op.start_time + Op2#op.end_time)/2.
+%%
 %%-spec cmp_ar_opstart(op(),op()) -> boolean().
 %%cmp_ar_opstart(Op1, Op2) ->
 %%  Op1#op.start_time < Op2#op.start_time.
