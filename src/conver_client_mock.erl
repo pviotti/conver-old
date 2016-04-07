@@ -76,7 +76,7 @@ handle_cast(_Msg, _State) -> {noreply, ok}.
 terminate(normal, _State) ->
   ok;
 terminate(Reason, S) ->
-  io:format("ClientMock terminated, reason: ~p. State: ~p~n",[Reason, S]).
+  lager:warning("Mock client terminated, reason: ~p. State: ~p~n",[Reason, S]).
 
 handle_info(_Msg, State) ->  {noreply, State}.
 code_change(_OldVsn, State, _Extra) -> {ok, State}.

@@ -32,7 +32,7 @@ init([Proc, Store, CPid, StartTime]) ->
   random:seed(erlang:timestamp()),  % To do once per process
   Timeout = random:uniform(?MAX_OP_INTERVAL),
   NumOp = rnd_normal(?MEAN_OPS, ?SIGMA_OPS),
-  io:format("C-~p init, CPid ~p, n. ops: ~p~n", [Proc, CPid, NumOp]),
+  lager:info("P~p (~p) init, n. ops: ~p~n", [Proc, CPid, NumOp]),
   ClientModule = get_client_module(Store),
   {ok, #state{proc=Proc, store=ClientModule, cpid=CPid,
     t0=StartTime, num_op=NumOp, ops=[]}, Timeout}.
@@ -62,7 +62,7 @@ handle_info(timeout, S = #state{proc=Proc, cpid=CPid, t0=T0, num_op=NumOp, ops=O
   Timeout = random:uniform(?MAX_OP_INTERVAL),
   {noreply, StateNew, Timeout};
 handle_info(_Message, S) ->
-  io:format("Process ~s received a message: ~s.~n",[S#state.proc,_Message]),
+  lager:warning("Process ~s received a message: ~s.~n",[S#state.proc,_Message]),
   Timeout = random:uniform(?MAX_OP_INTERVAL),
   {noreply, S, Timeout}.
 
@@ -71,9 +71,9 @@ code_change(_OldVsn, State, _Extra) -> {ok, State}.
 terminate(normal, S) ->
   erlang:apply(S#state.store, terminate, [S#state.cpid]),
   ets:insert(?ETS_TABLE, {S#state.proc, S#state.ops}),
-  io:format("P~s terminated.~n",[S#state.proc]);
+  io:format("P~s ended.~n",[S#state.proc]);
 terminate(Reason, S) ->
-  io:format("Process ~s terminated, reason: ~p. State: ~p~n",[S#state.proc, Reason, S#state.ops]).
+  lager:warning("Process ~s terminated, reason: ~p. State: ~p~n",[S#state.proc, Reason, S#state.ops]).
 
 
 %%%===================================================================

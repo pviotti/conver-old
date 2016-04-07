@@ -11,7 +11,7 @@
 
 init(ProcId, Conf) ->
   Server = lists:nth((hd(atom_to_list(ProcId)) rem length(Conf))+1, Conf),
-  io:format("Zk client connecting to server: ~p.~n", [Server]),
+  lager:notice("Zk client connecting to server: ~p.~n", [Server]),
   erlzk:start(),
   {ok, Pid} = erlzk:connect([Server], 30000),
   case erlzk:exists(Pid, "/key") of

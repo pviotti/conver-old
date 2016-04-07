@@ -6,15 +6,13 @@
 -export([main/2]).
 
 
-
 %%% API
 
 -spec main(pos_integer(), atom()) -> no_return().
 main(Num, Store) ->
-  application:ensure_started(conver),
   % Initialize utils
+  lager:start(),
   random:seed(erlang:timestamp()),
-  % TODO init Lager
   % Initialize ETS table to collect results
   ets:new(?ETS_TABLE, [ordered_set, named_table, public]),
 
@@ -39,7 +37,7 @@ main(Num, Store) ->
 loop(Num, {StartTime,Store}) ->
   receive
     {'DOWN', _Ref, process, _Pid, _Reason} ->
-      %io:format("Process ~p (~p) terminated, reason: ~p~n", [Ref,Pid,Reason]),
+      %lager:debug("Process ~p (~p) terminated, reason: ~p~n", [Ref,Pid,Reason]),
       case Num of
         1 ->
           EndTime = erlang:monotonic_time(nano_seconds),
@@ -50,7 +48,7 @@ loop(Num, {StartTime,Store}) ->
           loop(Num-1, {StartTime,Store})
       end;
     Unknown ->
-      io:format("Received message: ~p~n",[Unknown]),
+      lager:warning("Received message: ~p~n",[Unknown]),
       loop(Num, {StartTime,Store})
   end.
 

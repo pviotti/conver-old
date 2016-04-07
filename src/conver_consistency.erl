@@ -86,14 +86,16 @@ check_monotonic_reads(G, Sessions) ->
 mark_mr_violations(_, _, []) -> ok;
 mark_mr_violations(G, LastWriteRead, [H|T]) when H#op.type == read ->
   NewLastWriteRead = if
-                       LastWriteRead#op.arg > H#op.arg ->
+                       LastWriteRead#op.arg > H#op.arg,  H#op.arg =< 0 ->
+                         LastWriteRead;
+                       LastWriteRead#op.arg > H#op.arg,  H#op.arg > 0  ->
                          OriginalWrite = hd(get_in_neighbours_by_rel(G, H, vis)),
                          ConcNeighbours = get_in_neighbours_by_rel(G, OriginalWrite, conc),
                          case lists:member(LastWriteRead, ConcNeighbours) of
                            %% If the last write in ar is concurrent with the write whose value is read by this operation
                            %% then it's an error in the way we constructed the ar speculative total order.
                            true ->
-                             io:format("****** [MR] Anomaly in the speculative total order ar: ~p ******~n", [H]),
+                             lager:notice("[MR] Anomaly in the speculative total order ar: ~p", [H]),
                              OriginalWrite;
                            false ->
                              add_label_to_vertex(G, H, mr),        %% otherwise: mark the anomaly
@@ -126,7 +128,7 @@ mark_ryw_violations(G, LastWrite, [H|T]) when H#op.type == read ->
       case lists:member(LastWrite, ConcNeighbours) of
         %% If the last write in ar is concurrent with the write whose value is read by this operation
         %% then it's an error in the way we constructed the ar speculative total order.
-        true -> io:format("****** [RYW] Anomaly in the speculative total order ar: ~p ******~n", [H]);
+        true -> lager:notice("[RYW] Anomaly in the speculative total order ar: ~p", [H]);
         false ->  add_label_to_vertex(G, H, ryw)        %% otherwise: mark the anomaly
       end;
     false -> ok
@@ -160,7 +162,7 @@ check_writes_follow_reads(G) ->
   case sets:is_subset(SetVisSoRW, SetAr) of
     true -> true;
     false ->
-      io:format("WFR anomaly: ~p~n", [sets:subtract(SetVisSoRW, SetAr)]),
+      lager:notice("WFR anomaly: ~p", [sets:subtract(SetVisSoRW, SetAr)]),
       false
   end.
 
@@ -195,7 +197,7 @@ mark_rval_violations(G, LastWrite, [H|T]) when H#op.type == read ->
           if IsWriteConcurrent ->
               %% If the last write in ar or the current read is concurrent with the write whose value has been read
               %% then it's just an error in the way we constructed the ar speculative total order
-              io:format("****** [RVAL] Anomaly in the speculative total order ar: ~p ******~n", [H]);
+              lager:notice("[RVAL] Anomaly in the speculative total order ar: ~p", [H]);
             true ->
               add_label_to_vertex(G, H, rval)       %% otherwise: mark the anomaly
           end

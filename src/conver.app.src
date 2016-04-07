@@ -9,6 +9,15 @@
   {env,[]},
   {modules, []},
 
+  {lager, [
+     {log_root, "./log"},
+     {handlers, [
+       {lager_console_backend, info},
+       {lager_file_backend, [{file, "error.log"}, {level, error}]},
+       {lager_file_backend, [{file, "console.log"}, {level, info}]}
+     ]}
+   ]},
+
   {maintainers,["Paolo Viotti"]},
   {links,[{"Github","https://github.com/pviotti/conver"}]},
   {licenses,["Apache 2.0"]}
