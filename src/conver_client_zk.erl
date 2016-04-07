@@ -21,6 +21,7 @@ init(ProcId, Conf) ->
   Pid.
 
 read(Pid, _Key) ->
+  erlzk:sync(Pid, "/key"),
   {ok, {Val, _Stat}} = erlzk:get_data(Pid, "/key"),
   binary_to_integer(Val).
 
