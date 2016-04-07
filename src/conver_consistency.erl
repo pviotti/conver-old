@@ -18,6 +18,7 @@ check_consistency(Ops) ->
   build_ordering(OpLst, G, fun cmp_so/2, so),
   build_ordering(OpLst, G, fun cmp_rb/2, rb),
   build_ordering(OpLst, G, fun cmp_vis/2, vis),
+  build_ordering(OpLst, G, fun are_concurrent/2, conc),
 
   build_ordering(OpLst, G, fun cmp_ar/2, ar),
   true = (count_edges(G,ar) == (length(OpLst) * (length(OpLst)-1)) div 2),
@@ -31,22 +32,22 @@ check_consistency(Ops) ->
   IsCausal = IsPRAM andalso IsWFR,
   IsRealTime = check_real_time(G),
   IsRValF = check_rval(G, ArLst),
-  IsLinearizable = IsCausal andalso IsRealTime andalso
+  IsRegular = IsCausal andalso IsRealTime andalso
     IsRValF andalso is_subset(G, vis, ar),
 
-  io:format("~nMR: ~s~n", [print_bool(IsMR)]),
-  io:format("RYW: ~s~n", [print_bool(IsRYW)]),
-  io:format("MW: ~s~n", [print_bool(IsMW)]),
-  io:format("WFR: ~s~n", [print_bool(IsWFR)]),
-  io:format("PRAM: ~s~n", [print_bool(IsPRAM)]),
-  io:format("Causal: ~s~n", [print_bool(IsCausal)]),
-  io:format("RealTime: ~s~n", [print_bool(IsRealTime)]),
-  io:format("RVal(F): ~s~n", [print_bool(IsRValF)]),
-  io:format("Linearizable: ~s~n~n", [print_bool(IsLinearizable)]),
-
   OpsChecked = build_checked_proplist(G, Ops),
-  io:format("Ar as list: ~p~n~n", [ArLst]),
+  %io:format("Ar as list: ~p~n~n", [ArLst]),
   io:format("Consistency check: ~p~n", [OpsChecked]),
+
+  io:format("~nMonotonic Reads...................... ~s~n", [print_bool(IsMR)]),
+  io:format("Read-Your-Writes..................... ~s~n", [print_bool(IsRYW)]),
+  io:format("Monotonic Writes..................... ~s~n", [print_bool(IsMW)]),
+  io:format("Writes-Follow-Reads.................. ~s~n", [print_bool(IsWFR)]),
+  io:format("PRAM................................. ~s~n", [print_bool(IsPRAM)]),
+  io:format("Causal............................... ~s~n", [print_bool(IsCausal)]),
+  io:format("RealTime............................. ~s~n", [print_bool(IsRealTime)]),
+  io:format("Regular.............................. ~s~n~n", [print_bool(IsRegular)]),
+
   OpsChecked.
 
 
@@ -78,19 +79,32 @@ print_bool(false) -> color:red("FAIL").
 
 -spec check_monotonic_reads(digraph:graph(), [[op()]]) -> boolean().
 check_monotonic_reads(G, Sessions) ->
-  [mark_mr_violations(G, 0, Session) || Session <- Sessions],
+  [mark_mr_violations(G, #op{proc=init, type=write, arg=0}, Session) || Session <- Sessions],
   is_semantics_respected(G, mr).
 
--spec mark_mr_violations(digraph:graph(), integer(), [op()]) -> 'ok'.
+-spec mark_mr_violations(digraph:graph(), op(), [op()]) -> 'ok'.
 mark_mr_violations(_, _, []) -> ok;
-mark_mr_violations(G, LastValueRead, [H|T]) when H#op.type == read ->
-  LastValRead = case LastValueRead > H#op.arg of
-                  true ->
-                    add_label_to_vertex(G, H, mr),
-                    LastValueRead;
-                  false -> H#op.arg
-                end,
-  mark_mr_violations(G, LastValRead, T);
+mark_mr_violations(G, LastWriteRead, [H|T]) when H#op.type == read ->
+  NewLastWriteRead = if
+                       LastWriteRead#op.arg > H#op.arg ->
+                         OriginalWrite = hd(get_in_neighbours_by_rel(G, H, vis)),
+                         ConcNeighbours = get_in_neighbours_by_rel(G, OriginalWrite, conc),
+                         case lists:member(LastWriteRead, ConcNeighbours) of
+                           %% If the last write in ar is concurrent with the write whose value is read by this operation
+                           %% then it's an error in the way we constructed the ar speculative total order.
+                           true ->
+                             io:format("****** [MR] Anomaly in the speculative total order ar: ~p ******~n", [H]),
+                             OriginalWrite;
+                           false ->
+                             add_label_to_vertex(G, H, mr),        %% otherwise: mark the anomaly
+                             LastWriteRead
+                         end;
+                       LastWriteRead#op.arg == H#op.arg ->
+                         LastWriteRead;
+                       LastWriteRead#op.arg < H#op.arg ->
+                         hd(get_in_neighbours_by_rel(G, H, vis))
+                     end,
+  mark_mr_violations(G, NewLastWriteRead, T);
 mark_mr_violations(G, LastValueRead, [H|T]) when H#op.type == write ->
   mark_mr_violations(G, LastValueRead, T).
 
@@ -99,19 +113,27 @@ mark_mr_violations(G, LastValueRead, [H|T]) when H#op.type == write ->
 
 -spec check_read_your_writes(digraph:graph(), [[op()]]) -> boolean().
 check_read_your_writes(G, Sessions) ->
-  [mark_ryw_violations(G, 0, Session) || Session <- Sessions],
+  [mark_ryw_violations(G, #op{proc=init, type=write, arg=0}, Session) || Session <- Sessions],
   is_semantics_respected(G, ryw).
 
--spec mark_ryw_violations(digraph:graph(), integer(), [op()]) -> 'ok'.
+-spec mark_ryw_violations(digraph:graph(), op(), [op()]) -> 'ok'.
 mark_ryw_violations(_, _, []) -> ok;
-mark_ryw_violations(G, LastValueRead, [H|T]) when H#op.type == read ->
-  case LastValueRead > H#op.arg of
-    true -> add_label_to_vertex(G, H, ryw);
+mark_ryw_violations(G, LastWrite, [H|T]) when H#op.type == read ->
+  case LastWrite#op.arg > H#op.arg of
+    true ->
+      OriginalWrite = hd(get_in_neighbours_by_rel(G, H, vis)),
+      ConcNeighbours = get_in_neighbours_by_rel(G, OriginalWrite, conc),
+      case lists:member(LastWrite, ConcNeighbours) of
+        %% If the last write in ar is concurrent with the write whose value is read by this operation
+        %% then it's an error in the way we constructed the ar speculative total order.
+        true -> io:format("****** [RYW] Anomaly in the speculative total order ar: ~p ******~n", [H]);
+        false ->  add_label_to_vertex(G, H, ryw)        %% otherwise: mark the anomaly
+      end;
     false -> ok
   end,
-  mark_ryw_violations(G, LastValueRead, T);
+  mark_ryw_violations(G, LastWrite, T);
 mark_ryw_violations(G, _, [H|T]) when H#op.type == write ->
-  mark_ryw_violations(G, H#op.arg, T).
+  mark_ryw_violations(G, H, T).
 
 
 %% Monotonic writes
@@ -153,7 +175,7 @@ check_real_time(G) ->
 
 -spec check_rval(digraph:graph(), [op()]) -> boolean().
 check_rval(G, ArLst) ->
-  mark_rval_violations(G, 0, ArLst),
+  mark_rval_violations(G, #op{proc=init, type=write, arg=0}, ArLst),
   is_semantics_respected(G, rval).
 
 -spec mark_rval_violations(digraph:graph(), op(), [op()]) -> 'ok'.
@@ -161,7 +183,23 @@ mark_rval_violations(_, _, []) -> ok;
 mark_rval_violations(G, LastWrite, [H|T]) when H#op.type == read ->
   case H#op.arg == LastWrite#op.arg of
     true -> ok;
-    false -> add_label_to_vertex(G, H, rval)
+    false ->
+      if H#op.arg == 0 -> ok; %% XXX exception for initial write(0): otherwise hd() would throw an error
+        true ->
+          OriginalWrite = hd(get_in_neighbours_by_rel(G, H, vis)),
+          OriginalWriteConc = get_in_neighbours_by_rel(G, OriginalWrite, conc),
+          LastWriteConc = get_in_neighbours_by_rel(G, LastWrite, conc),
+          IsWriteConcurrent = lists:member(LastWrite, OriginalWriteConc) or
+                              lists:member(H, OriginalWriteConc) or
+                              lists:member(H, LastWriteConc),
+          if IsWriteConcurrent ->
+              %% If the last write in ar or the current read is concurrent with the write whose value has been read
+              %% then it's just an error in the way we constructed the ar speculative total order
+              io:format("****** [RVAL] Anomaly in the speculative total order ar: ~p ******~n", [H]);
+            true ->
+              add_label_to_vertex(G, H, rval)       %% otherwise: mark the anomaly
+          end
+      end
   end,
   mark_rval_violations(G, LastWrite, T);
 mark_rval_violations(G, _, [H|T]) when H#op.type == write ->
@@ -225,6 +263,16 @@ is_subset(G, Rel1, Rel2) ->
   sets:is_subset(SetRel1,SetRel2).
 
 
+-spec get_in_neighbours_by_rel(digraph:graph(), digraph:vertex(), atom()) ->
+  [digraph:vertex()].
+get_in_neighbours_by_rel(G, V, Rel) ->
+  lists:filter(fun(VN) ->
+                {{VN, V}, VN, V, Label} = digraph:edge(G, {VN, V}),
+                lists:member(Rel, Label)
+              end,
+    digraph:in_neighbours(G, V)).
+
+
 %%%===================================================================
 %%% Functions to compare operations
 %%%===================================================================
@@ -250,16 +298,13 @@ cmp_ar(Op1, Op2) ->
     false -> cmp_rb(Op1, Op2);
     true -> %% Concurrent operations
       if
-        %% Speculative ordering based on operation arguments
-        Op1#op.arg < Op2#op.arg ->
-          true;
-        Op1#op.arg > Op2#op.arg ->
-          false;
+        Op1#op.arg == Op2#op.arg, Op1#op.type == Op2#op.type ->   %% they can only be two reads, by design
+          Op1#op.proc < Op2#op.proc;                              %%    use process id to break ties
+        Op1#op.arg == Op2#op.arg, Op1#op.type =/= Op2#op.type ->  %% a read and a write with same argument, concurrent
+          Op1#op.type == write;                                   %%    the write goes first
 
-        Op1#op.arg == Op2#op.arg, Op1#op.type == Op2#op.type ->   % they can only be two reads, by design
-          Op1#op.proc < Op2#op.proc;                              % use process id to break ties
-        Op1#op.arg == Op2#op.arg, Op1#op.type =/= Op2#op.type ->  % a read and a write with same argument, concurrent
-          Op1#op.type == write                                    % the write goes first
+        Op1#op.arg < Op2#op.arg; Op1#op.arg > Op2#op.arg ->
+          cmp_opmedian(Op1, Op2)                                  %% Speculative ordering based on operations' medians
       end
   end.
 
@@ -267,25 +312,7 @@ cmp_ar(Op1, Op2) ->
 are_concurrent(Op1, Op2) ->
   not cmp_rb(Op1, Op2) andalso not cmp_rb(Op2, Op1).
 
-%%-spec cmp_ar_opmedian(op(),op()) -> boolean().
-%%cmp_ar_opmedian(Op1, Op2) ->
-%%  (Op1#op.start_time + Op1#op.end_time)/2 <
-%%    (Op2#op.start_time + Op2#op.end_time)/2.
-%%
-%%-spec cmp_ar_opstart(op(),op()) -> boolean().
-%%cmp_ar_opstart(Op1, Op2) ->
-%%  Op1#op.start_time < Op2#op.start_time.
-%%
-%%-spec cmp_ar_op14(op(),op()) -> boolean().
-%%cmp_ar_op14(Op1, Op2) ->
-%%  (Op1#op.end_time - Op1#op.start_time)/4 + Op1#op.start_time <
-%%    (Op2#op.end_time - Op2#op.start_time)/4 + Op2#op.start_time.
-%%
-%%-spec cmp_ar_op34(op(),op()) -> boolean().
-%%cmp_ar_op34(Op1, Op2) ->
-%%  ((Op1#op.end_time - Op1#op.start_time)/4)*3 + Op1#op.start_time <
-%%    ((Op2#op.end_time - Op2#op.start_time)/4)*3 + Op2#op.start_time.
-%%
-%%-spec cmp_ar_opend(op(),op()) -> boolean().
-%%cmp_ar_opend(Op1, Op2) ->
-%%  Op1#op.end_time < Op2#op.end_time.
+-spec cmp_opmedian(op(),op()) -> boolean().
+cmp_opmedian(Op1, Op2) ->
+  (Op1#op.start_time + Op1#op.end_time)/2 <
+    (Op2#op.start_time + Op2#op.end_time)/2.
