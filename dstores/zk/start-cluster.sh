@@ -23,7 +23,7 @@ do
                 -h "zookeeper${index}" \
                 --net="zk" \
                 --name="zookeeper${index}" \
-                -d pviotti/zookeeper:3.4.8 > /dev/null 2>&1
+                -d pviotti/zookeeper > /dev/null 2>&1
   
   CONTAINER_IP=$(docker inspect -f '{{.NetworkSettings.Networks.zk.IPAddress}}' "zookeeper${index}")
   echo "Started zookeeper${index} (${CONTAINER_IP})"

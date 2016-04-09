@@ -13,9 +13,11 @@
      {log_root, "./log"},
      {handlers, [
        {lager_console_backend, info},
-       {lager_file_backend, [{file, "error.log"}, {level, error}]},
-       {lager_file_backend, [{file, "console.log"}, {level, info}]}
-     ]}
+       {lager_file_backend, [{file, "error.log"}, {level, error},{date, "$D0"},{count, 2}]},
+       {lager_file_backend, [{file, "console.log"}, {level, info},{date, "$D0"},{count, 2}]}
+     ]},
+    {colored, true},
+    {suppress_application_start_stop, true}
    ]},
 
   {maintainers,["Paolo Viotti"]},

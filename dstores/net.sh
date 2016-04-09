@@ -22,40 +22,41 @@ function show_qdisc() {
     sudo tc qdisc show dev $1
 }
 
-DOCKER_RIAK_CLUSTER_SIZE=${DOCKER_RIAK_CLUSTER_SIZE:-3}
+DOCKER_CLUSTER_SIZE=${DOCKER_CLUSTER_SIZE:-3}
+STORE_ID=$2
 
 case "$1" in
 slow)
-    for index in $(seq "1" "${DOCKER_RIAK_CLUSTER_SIZE}");
+    for index in $(seq "1" "${DOCKER_CLUSTER_SIZE}");
     do
-        container_if=$(get_container_interface $(docker ps -aqf "name=riak$index"))
+        container_if=$(get_container_interface $(docker ps -aqf "name=$STORE_ID$index"))
         apply_delay $container_if
     done
     ;;
 lossy)
-    for index in $(seq "1" "${DOCKER_RIAK_CLUSTER_SIZE}");
+    for index in $(seq "1" "${DOCKER_CLUSTER_SIZE}");
     do
-        container_if=$(get_container_interface $(docker ps -aqf "name=riak$index"))
+        container_if=$(get_container_interface $(docker ps -aqf "name=$STORE_ID$index"))
         apply_lossy $container_if
     done
     ;;
 normal)
-    for index in $(seq "1" "${DOCKER_RIAK_CLUSTER_SIZE}");
+    for index in $(seq "1" "${DOCKER_CLUSTER_SIZE}");
     do
-        container_if=$(get_container_interface $(docker ps -aqf "name=riak$index"))
+        container_if=$(get_container_interface $(docker ps -aqf "name=$STORE_ID$index"))
         remove_qdisc_filters $container_if
     done;
     ;;
 show)
-    for index in $(seq "1" "${DOCKER_RIAK_CLUSTER_SIZE}");
+    for index in $(seq "1" "${DOCKER_CLUSTER_SIZE}");
     do
-        container_if=$(get_container_interface $(docker ps -aqf "name=riak$index"))
+        container_if=$(get_container_interface $(docker ps -aqf "name=$STORE_ID$index"))
         echo -n "$container_if: " 
         show_qdisc $container_if
     done;
     ;;
 *)
-  echo $"Usage: $0 {slow|lossy|normal|show}"
+  echo $"Usage: $0 {slow|lossy|normal|show} {zookeeper|riak}"
   exit 1
 esac
 

@@ -74,9 +74,10 @@ handle_call({read, Key}, _From, _State) ->
   case random:uniform(?MISREAD_PROBABILITY) of
     1 ->
       CorrectRes = ets:lookup_element(?MODULE, Key, 2),
-      Res = case CorrectRes of
-              0 -> 0;
-              _ -> CorrectRes -2
+      Res = if
+              CorrectRes < 2 -> CorrectRes;
+              CorrectRes == 2 -> 1;
+              CorrectRes > 2 -> CorrectRes -2
             end;
     _ ->
       Res = ets:lookup_element(?MODULE, Key, 2)

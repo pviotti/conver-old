@@ -31,6 +31,7 @@
 -spec main(pos_integer(), atom()) -> no_return().
 main(Num, Store) ->
   % Initialize utils
+  application:set_env(lager, suppress_application_start_stop, true),
   lager:start(),
   random:seed(erlang:timestamp()),
   % Initialize ETS table to collect results

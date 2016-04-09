@@ -1,4 +1,4 @@
-.PHONY: build start test stop net-slow net-lossy net-normal net-show
+.PHONY: build start test stop 
 
 build:
 	docker pull "hectcastro/riak"
@@ -6,20 +6,8 @@ build:
 start:
 	./start-cluster.sh
 
-test:
+status:
 	./test-cluster.sh
 
 stop:
 	./stop-cluster.sh
-	
-net-slow:
-	./net.sh slow
-
-net-lossy:
-	./net.sh lossy
-
-net-normal:
-	./net.sh normal
-
-net-show:
-	./net.sh show
