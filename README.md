@@ -31,7 +31,16 @@ Once installed Erlang/OTP (R18+), to build Conver issue:
 
     $ make
 
-To make Conver test a simple execution:
+The `dstores` folder contains scripts to build and locally run 
+[Docker](https://www.docker.com/) clusters of different storage systems.  
+For instance, to build and run a cluster of ZooKeeper servers
+issue `make build-zk` and `make start-zk`.
+To query the cluster status use `make status-zk`, and to stop it `make stop-zk`.  
+Additionally, the script `dstores/net.sh` offers functions to simulate
+slow and lossy networks.  
+
+Once the storage system is running and its configuration parameters are
+recorded in `conver.conf`, to run a Conver test issue:
 
     $ ./conver run <num> <mock|zk|riak>
 
