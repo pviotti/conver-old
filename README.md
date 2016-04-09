@@ -1,4 +1,4 @@
-# Con:heavy_check_mark:er
+# Con:heavy_check_mark:er [![Build Status](https://travis-ci.org/pviotti/conver.svg?branch=master)](https://travis-ci.org/pviotti/conver)
 
 Conver verifies implementations of the most common non-transactional consistency models.  
 
@@ -49,11 +49,9 @@ followed by a string that identifies the store under test
 (`mock` for a dummy in-memory store consisting of Erlang's *ets*,
 `zk` for ZooKeeper, `riak` for Riak).  
 
-To run a demonstrative test of the dummy datastore 
-using [PropEr](http://proper.softlab.ntua.gr/):
-
-    $ ./conver proper
-
+For comparison, you can run a *traditional* property-based test suite
+on the dummy in-memory database using 
+[PropEr](http://proper.softlab.ntua.gr/) by issuing `./conver proper`.
 
 ## Authors and license
 
