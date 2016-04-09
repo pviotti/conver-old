@@ -21,7 +21,7 @@ To have an overview of the consistency models verified by Conver, see [this surv
 Besides textual output, Conver generates a visualization of the executions,
 highlighting the violations of consistency models.  
 
-![Conver execution](http://i.imgur.com/fd3G2PX.png)
+![Conver execution](http://i.imgur.com/BDGtpzX.png)
 
 Similar projects: [Jepsen][jepsen], [Hermitage][hermitage].  
 
