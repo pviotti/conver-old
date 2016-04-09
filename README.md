@@ -12,7 +12,7 @@ The approach implemented in Conver has been described in [this PaPoC 2016 paper]
 
 ## Features
 
-Datastores currently supported: **ZooKeeper,** **Riak** (and a dummy, in-memory *ets*).  
+Datastores currently supported: **ZooKeeper** and **Riak**.  
 
 Currently, Conver can verify the following consistency semantics: Monotonic Reads, Monotonic Writes,
 Read-your-writes, PRAM, Writes-follow-reads, Causal and Strong Consistency (regularity).  
@@ -34,7 +34,7 @@ Once installed Erlang/OTP (R18+), to build Conver issue:
 The `dstores` folder contains scripts to build and locally run 
 [Docker](https://www.docker.com/) clusters of different storage systems.  
 For instance, to build and run a cluster of ZooKeeper servers
-issue `make build-zk` and `make start-zk`.
+issue `make build-zk` and `make start-zk`.  
 To query the cluster status use `make status-zk`, and to stop it `make stop-zk`.  
 Additionally, the script `dstores/net.sh` offers functions to simulate
 slow and lossy networks.  
@@ -49,7 +49,8 @@ followed by a string that identifies the store under test
 (`mock` for a dummy in-memory store consisting of Erlang's *ets*,
 `zk` for ZooKeeper, `riak` for Riak).  
 
-To run a demonstrative test of the dummy datastore using PropEr:
+To run a demonstrative test of the dummy datastore 
+using [PropEr](http://proper.softlab.ntua.gr/):
 
     $ ./conver proper
 
