@@ -1,0 +1,10 @@
+language: erlang
+otp_release:
+  - 18.1
+install:
+  - make
+script:
+  - make dialyzer
+notifications:
+  email: paolo.viotti@gmail.com
+
