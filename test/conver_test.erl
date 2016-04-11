@@ -39,7 +39,7 @@ meck_returned2(Mod, Fun, Arg, _History = [H|T]) ->
   end.
 
 
-conver_mock_test() ->
+conver_mock_test_IGNORE() ->
   ok =  meck:new(io, [unstick, passthrough]),
   meck:expect(io, format, 2, meck:passthrough()),
   ?assertMatch(ok, conver:main(3, mock)), %% XXX assume linearizable configuration
