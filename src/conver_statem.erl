@@ -55,9 +55,9 @@ prop_consistency() ->
   ?FORALL(Cmds, commands(?MODULE),
     ?TRAPEXIT(
       begin
-        {History,State,Result} = run_commands(?MODULE, Cmds),
+        {History, State, Result} = run_commands(?MODULE, Cmds),
         ?WHENFAIL(io:format("History: ~w~nState: ~w\nResult: ~w~n",
-          [History,State,Result]),
+          [History, State, Result]),
           aggregate(command_names(Cmds), Result =:= ok))
       end)).
 
@@ -65,9 +65,9 @@ prop_paral_consistency() ->
   ?FORALL(Cmds, proper_statem:parallel_commands(?MODULE),
     ?TRAPEXIT(
       begin
-        {Sequential,Parallel,Result} = proper_statem:run_parallel_commands(?MODULE, Cmds),
+        {Sequential, Parallel, Result} = proper_statem:run_parallel_commands(?MODULE, Cmds),
         ?WHENFAIL(io:format("History: ~w~nState: ~w\nResult: ~w~n",
-          [Sequential,Parallel,Result]),
+          [Sequential, Parallel, Result]),
           aggregate(command_names(Cmds), Result =:= ok))
       end)).
 
@@ -87,18 +87,18 @@ command(S) ->
   ]).
 
 value() ->
-  erlang:unique_integer([monotonic,positive]).
+  erlang:unique_integer([monotonic, positive]).
 
 precondition(_, _) ->
   true.
 
-next_state(S, _V, {call,_,read,[_Pid,key]}) ->
+next_state(S, _V, {call, _, read, [_Pid, key]}) ->
   S;
-next_state(S, _, {call,_,write,[_Pid,key,Value]}) -> % XXX check if write succeded
+next_state(S, _, {call, _, write, [_Pid, key, Value]}) -> % XXX check if write succeded
   S#state{val = Value}.
 
-postcondition(_S, {call,_,write,[_Pid,key,_Value]}, Result) ->
+postcondition(_S, {call, _, write, [_Pid, key, _Value]}, Result) ->
   Result =:= true;
-postcondition(S, {call,_,read,[_Pid,key]}, Result) ->
+postcondition(S, {call, _, read, [_Pid, key]}, Result) ->
   Result =:= S#state.val.
 

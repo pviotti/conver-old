@@ -30,7 +30,7 @@
 init(ProcId, Conf) ->
   Server = lists:nth((hd(atom_to_list(ProcId)) rem length(Conf))+1, Conf),
   lager:notice("Riak client connecting to server: ~p.~n", [Server]),
-  {ok, Pid} = riakc_pb_socket:start_link(element(1,Server), element(2,Server)),
+  {ok, Pid} = riakc_pb_socket:start_link(element(1, Server), element(2, Server)),
   %% TODO test if bucket is already initialized
   Object = riakc_obj:new(<<"bucket">>, <<"key">>, integer_to_binary(0)),
   riakc_pb_socket:put(Pid, Object),

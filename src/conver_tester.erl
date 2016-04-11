@@ -39,7 +39,7 @@ init(Proc, Store, StoreConf) ->
   erlang:apply(ClientModule, init, [Proc, StoreConf]).  % Initialize store client
 
 -spec start(atom(), atom(), pid(), integer()) ->
-  {ok,pid()} | ignore | {error,{already_started,pid()} | term()}.
+  {ok, pid()} | ignore | {error, {already_started, pid()} | term()}.
 start(Proc, Store, ClientPid, StartTime) ->
   gen_server:start({local, Proc}, ?MODULE, [Proc, Store, ClientPid, StartTime], []).
 
@@ -72,7 +72,7 @@ handle_info(timeout, S = #state{proc=Proc, cpid=CPid, t0=T0, num_op=NumOp, ops=O
       io:format("P~s:R:~p. ",[Proc,Arg]);
     _ ->
       OpType = write,
-      Arg = erlang:unique_integer([monotonic,positive]), % unique value, monotonic
+      Arg = erlang:unique_integer([monotonic, positive]), % unique value, monotonic
       erlang:apply(S#state.store, write, [CPid, key, Arg]),
       io:format("P~s:W(~p). ",[Proc,Arg])
   end,

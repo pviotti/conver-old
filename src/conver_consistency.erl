@@ -41,7 +41,7 @@ check_consistency(Ops) ->
   build_ordering(OpLst, G, fun are_concurrent/2, conc),
 
   build_ordering(OpLst, G, fun cmp_ar/2, ar),
-  true = (count_edges(G,ar) == (length(OpLst) * (length(OpLst)-1)) div 2),
+  true = (count_edges(G, ar) == (length(OpLst) * (length(OpLst)-1)) div 2),
   ArLst = lists:sort(fun cmp_ar/2, OpLst),
 
   IsMR = check_monotonic_reads(G, Sessions),
@@ -161,7 +161,7 @@ mark_ryw_violations(G, _, [H|T]) when H#op.type == write ->
 %% Monotonic writes
 -spec check_monotonic_writes(digraph:graph()) -> boolean().
 check_monotonic_writes(G) ->
-  FunFilterWW = fun({V1,V2}) ->
+  FunFilterWW = fun({V1, V2}) ->
                   (V1#op.type == write) andalso (V2#op.type == write)
                 end,
   SetSoWW = sets:from_list(lists:filter(FunFilterWW, filter_edges_by_rel(G, so))),
@@ -172,7 +172,7 @@ check_monotonic_writes(G) ->
 %% Writes-follow-reads
 -spec check_writes_follow_reads(digraph:graph()) -> boolean().
 check_writes_follow_reads(G) ->
-  FunFilterRW = fun({V1,V2}) ->
+  FunFilterRW = fun({V1, V2}) ->
                   (V1#op.type == read) andalso (V2#op.type == write)
                 end,
   SetSoRW = sets:from_list(lists:filter(FunFilterRW, filter_edges_by_rel(G, so))),
@@ -231,7 +231,7 @@ mark_rval_violations(G, _, [H|T]) when H#op.type == write ->
 -spec is_semantics_respected(digraph:graph(), atom()) -> boolean().
 is_semantics_respected(G, Model) ->
   lists:all(fun(X)->
-              {_,L} = digraph:vertex(G,X),
+              {_, L} = digraph:vertex(G, X),
               not(lists:member(Model, L))
             end,
     digraph:vertices(G)).
@@ -242,19 +242,19 @@ is_semantics_respected(G, Model) ->
 %%%===================================================================
 
 -spec build_ordering([op()], digraph:graph(),
-    fun((op(),op()) -> boolean()), atom()) -> [term()].
+    fun((op(), op()) -> boolean()), atom()) -> [term()].
 build_ordering(O, G, FunCmp, Label) ->
-  [add_label_to_edge(G, V1, V2, Label) || V1<- O, V2 <- O, FunCmp(V1,V2)].
+  [add_label_to_edge(G, V1, V2, Label) || V1<- O, V2 <- O, FunCmp(V1, V2)].
 
 
 -spec add_label_to_edge(digraph:graph(), digraph:vertex(), digraph:vertex(), atom()) ->
   digraph:edge() | {error, digraph:add_edge_err_rsn()}.
 add_label_to_edge(G, V1, V2, NewLabel) ->
-  case digraph:edge(G, {V1,V2}) of
-    {{V1,V2}, V1, V2, Label} ->
-      digraph:add_edge(G, {V1,V2}, V1, V2, Label ++ [NewLabel]);
+  case digraph:edge(G, {V1, V2}) of
+    {{V1, V2}, V1, V2, Label} ->
+      digraph:add_edge(G, {V1, V2}, V1, V2, Label ++ [NewLabel]);
     false ->
-      digraph:add_edge(G, {V1,V2}, V1, V2, [NewLabel])
+      digraph:add_edge(G, {V1, V2}, V1, V2, [NewLabel])
   end.
 
 
@@ -267,7 +267,7 @@ add_label_to_vertex(G, V, NewLabel) ->
 -spec filter_edges_by_rel(digraph:graph(), atom()) -> [digraph:edge()].
 filter_edges_by_rel(G, Rel) ->
   lists:filter(fun(E) ->
-    {{_,_}, _, _, Label} = digraph:edge(G, E),
+    {{_, _}, _, _, Label} = digraph:edge(G, E),
     lists:member(Rel, Label)
                end,
     digraph:edges(G)).
@@ -282,7 +282,7 @@ count_edges(G, Rel) ->
 is_subset(G, Rel1, Rel2) ->
   SetRel1 = sets:from_list(filter_edges_by_rel(G, Rel1)),
   SetRel2 = sets:from_list(filter_edges_by_rel(G, Rel2)),
-  sets:is_subset(SetRel1,SetRel2).
+  sets:is_subset(SetRel1, SetRel2).
 
 
 -spec get_in_neighbours_by_rel(digraph:graph(), digraph:vertex(), atom()) ->
@@ -299,22 +299,22 @@ get_in_neighbours_by_rel(G, V, Rel) ->
 %%% Functions to compare operations
 %%%===================================================================
 
--spec cmp_so(op(),op()) -> boolean().
+-spec cmp_so(op(), op()) -> boolean().
 cmp_so(Op1, Op2) ->
   Op1#op.proc == Op2#op.proc andalso
     Op1#op.end_time =< Op2#op.start_time.
 
--spec cmp_rb(op(),op()) -> boolean().
+-spec cmp_rb(op(), op()) -> boolean().
 cmp_rb(Op1, Op2) ->
   Op1#op.end_time < Op2#op.start_time.
 
--spec cmp_vis(op(),op()) -> boolean().
+-spec cmp_vis(op(), op()) -> boolean().
 cmp_vis(Op1, Op2) ->
   Op1#op.type == write andalso
     Op2#op.type == read andalso
     Op1#op.arg == Op2#op.arg.
 
--spec cmp_ar(op(),op()) -> boolean().
+-spec cmp_ar(op(), op()) -> boolean().
 cmp_ar(Op1, Op2) ->
   case are_concurrent(Op1, Op2) of
     false -> cmp_rb(Op1, Op2);
@@ -330,11 +330,11 @@ cmp_ar(Op1, Op2) ->
       end
   end.
 
--spec are_concurrent(op(),op()) -> boolean().
+-spec are_concurrent(op(), op()) -> boolean().
 are_concurrent(Op1, Op2) ->
   not cmp_rb(Op1, Op2) andalso not cmp_rb(Op2, Op1).
 
--spec cmp_opmedian(op(),op()) -> boolean().
+-spec cmp_opmedian(op(), op()) -> boolean().
 cmp_opmedian(Op1, Op2) ->
   (Op1#op.start_time + Op1#op.end_time)/2 <
     (Op2#op.start_time + Op2#op.end_time)/2.

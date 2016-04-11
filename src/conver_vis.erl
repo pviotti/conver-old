@@ -36,12 +36,12 @@ draw_execution(Ops, Duration, StoreName) ->
   H = (OpHeight + VMargin) * NProc *2,
   W = trunc(H + H/GoldenRatio),
 
-  Im = egd:create(W,H),
+  Im = egd:create(W, H),
 
   % Processes lines
   LineLength = W - (HMargin * 2),
   EbinDir = filename:dirname(code:which(?MODULE)), % HACK to get into priv dir
-  Filename = filename:join([filename:dirname(EbinDir),"priv","Helvetica14.wingsfont"]),
+  Filename = filename:join([filename:dirname(EbinDir), "priv", "Helvetica14.wingsfont"]),
   Font = egd_font:load(Filename),
   _ = [{egd:text(Im, {trunc(HMargin/2), trunc(H/(2*NProc)+(X-1)*(H/NProc))},
         Font, string:to_upper(atom_to_list(ProcName)), egd:color(black)),
@@ -49,7 +49,7 @@ draw_execution(Ops, Duration, StoreName) ->
         {HMargin, trunc(H/(2*NProc)+(X-1)*(H/NProc)+VMargin)},
         {W-HMargin, trunc(H/(2*NProc)+(X-1)*(H/NProc)+VMargin)},
         egd:color(black))}
-      || {{ProcName,_},X} <- lists:zip(Ops, lists:seq(1, NProc))],
+      || {{ProcName, _}, X} <- lists:zip(Ops, lists:seq(1, NProc))],
 
   % Operations rectangles
   FScaleTime = fun(X) -> trunc((LineLength * X)/ Duration + HMargin) end,
@@ -63,9 +63,9 @@ draw_execution(Ops, Duration, StoreName) ->
         {X1, trunc(H/(2*NProc)+(IdxP-1)*(H/NProc)+VMargin)},
         {X2, trunc(H/(2*NProc)+(IdxP-1)*(H/NProc)+VMargin-OpHeight)},
         Color)} ||
-        {X1,X2,Label,Color,FunRect} <- OpDetails]
+        {X1, X2, Label, Color, FunRect} <- OpDetails]
     end,
-  [FDrawOps(X,Y) || {{_,X},Y} <- lists:zip(Ops, lists:seq(1, NProc))],
+  [FDrawOps(X, Y) || {{_, X}, Y} <- lists:zip(Ops, lists:seq(1, NProc))],
 
   FileName = StoreName ++ ".png",
   egd:save(egd:render(Im, png), FileName),
@@ -82,9 +82,9 @@ convert_ops_details(FScaleTime, [H|T], Acc) ->
                        %% shades of red depending on
                        %% how many anomalies were detected
             0 -> {egd:color(black), fun egd:rectangle/4} ;
-            1 -> {egd:color({223,123,123}), fun egd:filledRectangle/4};
-            2 -> {egd:color({178,66,66}), fun egd:filledRectangle/4};
-            _ -> {egd:color({212,17,17}), fun egd:filledRectangle/4}
+            1 -> {egd:color({223, 123, 123}), fun egd:filledRectangle/4};
+            2 -> {egd:color({178, 66, 66}), fun egd:filledRectangle/4};
+            _ -> {egd:color({212, 17, 17}), fun egd:filledRectangle/4}
           end,
   Op = {FScaleTime(H#op.start_time), FScaleTime(H#op.end_time),
     get_op_label(H#op.type, H#op.arg), Color, FunRect},
