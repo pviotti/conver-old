@@ -32,7 +32,8 @@
 -export([initial_state/0, command/1,
   precondition/2, postcondition/3, next_state/3]).
 
--record(state, {val  :: integer()}).
+-record(state, {val         :: integer(),
+                client_pid  :: pid()}).
 
 -define(SERVER, conver_client_mock).
 
@@ -54,9 +55,7 @@ prop_consistency() ->
   ?FORALL(Cmds, commands(?MODULE),
     ?TRAPEXIT(
       begin
-        Pid = ?SERVER:init(ok, ok),
         {History,State,Result} = run_commands(?MODULE, Cmds),
-        ?SERVER:terminate(Pid),
         ?WHENFAIL(io:format("History: ~w~nState: ~w\nResult: ~w~n",
           [History,State,Result]),
           aggregate(command_names(Cmds), Result =:= ok))
@@ -66,9 +65,7 @@ prop_paral_consistency() ->
   ?FORALL(Cmds, proper_statem:parallel_commands(?MODULE),
     ?TRAPEXIT(
       begin
-        Pid = ?SERVER:init(ok, ok),
         {Sequential,Parallel,Result} = proper_statem:run_parallel_commands(?MODULE, Cmds),
-        ?SERVER:terminate(Pid),
         ?WHENFAIL(io:format("History: ~w~nState: ~w\nResult: ~w~n",
           [Sequential,Parallel,Result]),
           aggregate(command_names(Cmds), Result =:= ok))
@@ -80,12 +77,13 @@ prop_paral_consistency() ->
 %%%===================================================================
 
 initial_state() ->
-  #state{val = 0}.
+  Pid = ?SERVER:init(ok, ok),
+  #state{client_pid = Pid, val = 0}.
 
-command(_S) ->
+command(S) ->
   oneof([ % or: frequency
-    {call, ?SERVER, read, [key]},
-    {call, ?SERVER, write, [key, value()]}
+    {call, ?SERVER, read, [S#state.client_pid, key]},
+    {call, ?SERVER, write, [S#state.client_pid, key, value()]}
   ]).
 
 value() ->
@@ -94,13 +92,13 @@ value() ->
 precondition(_, _) ->
   true.
 
-next_state(S, _V, {call,_,read,[key]}) ->
+next_state(S, _V, {call,_,read,[_Pid,key]}) ->
   S;
-next_state(S, _, {call,_,write,[key,Value]}) -> % TODO check if write succeded
+next_state(S, _, {call,_,write,[_Pid,key,Value]}) -> % XXX check if write succeded
   S#state{val = Value}.
 
-postcondition(_S, {call,_,write,[key,_Value]}, Result) ->
+postcondition(_S, {call,_,write,[_Pid,key,_Value]}, Result) ->
   Result =:= true;
-postcondition(S, {call,_,read,[key]}, Result) ->
+postcondition(S, {call,_,read,[_Pid,key]}, Result) ->
   Result =:= S#state.val.
 
