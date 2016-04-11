@@ -4,7 +4,9 @@ otp_release:
 install:
   - make
 script:
+  - make test
   - make dialyzer
+  - make lint
 notifications:
   email: paolo.viotti@gmail.com
 

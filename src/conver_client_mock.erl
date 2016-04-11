@@ -34,14 +34,14 @@
 
 %%% conver_client callbacks
 
-init(_Proc, _Conf) ->
+init(_Proc, Conf) ->
   try
     ets:new(?MODULE, [set, named_table, public])
   catch
     error:badarg -> ok
   end,
   ets:insert(?MODULE, {key, 0}),
-  {ok, Pid} = gen_server:start(?MODULE, [], []),
+  {ok, Pid} = gen_server:start(?MODULE, [Conf], []),
   Pid.
 
 read(Pid, Key) ->
@@ -61,36 +61,35 @@ terminate(Pid) ->
 %%% gen_server callbacks
 %%%===================================================================
 
-init([]) ->
-  {ok, []}.
+init([Conf]) ->
+  random:seed(erlang:timestamp()),
+  {ok, Conf}.
 
-handle_call({write, Key, Val}, _From, _State) ->
+handle_call({write, Key, Val}, _From, State) ->
   timer:sleep(random:uniform(?MAX_OP_LATENCY div 2)),
   Res = ets:insert(?MODULE, {Key, Val}),  % overwrites if table is of type 'set'
   timer:sleep(random:uniform(?MAX_OP_LATENCY div 2)),
-  {reply, Res, _State};
-handle_call({read, Key}, _From, _State) ->
+  {reply, Res, State};
+handle_call({read, Key}, _From, State) ->
   timer:sleep(random:uniform(?MAX_OP_LATENCY div 2)),
-  case random:uniform(?MISREAD_PROBABILITY) of
-    1 ->
-      CorrectRes = ets:lookup_element(?MODULE, Key, 2),
-      Res = if
-              CorrectRes < 2 -> CorrectRes;
-              CorrectRes == 2 -> 1;
-              CorrectRes > 2 -> CorrectRes -2
-            end;
-    _ ->
-      Res = ets:lookup_element(?MODULE, Key, 2)
-  end,
+  CorrectRes = ets:lookup_element(?MODULE, Key, 2),
+  Res = case proplists:get_value(linearizable, State) of
+          true -> CorrectRes;
+          _ ->
+            case random:uniform(?MISREAD_PROBABILITY)  of
+              1 -> random:uniform(CorrectRes);
+              _ -> CorrectRes
+            end
+        end,
   timer:sleep(random:uniform(?MAX_OP_LATENCY div 2)),
-  {reply, Res, _State};
-handle_call({delete, Key}, _From, _State) ->
+  {reply, Res, State};
+handle_call({delete, Key}, _From, State) ->
   timer:sleep(random:uniform(?MAX_OP_LATENCY div 2)),
   Res = ets:delete(?MODULE, Key),
   timer:sleep(random:uniform(?MAX_OP_LATENCY div 2)),
-  {reply, Res, _State};
-handle_call(terminate, _From, _State) ->
-  {stop, normal, ok, _State}.
+  {reply, Res, State};
+handle_call(terminate, _From, State) ->
+  {stop, normal, ok, State}.
 
 handle_cast(_Msg, _State) -> {noreply, ok}.
 

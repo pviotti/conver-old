@@ -70,7 +70,8 @@ draw_execution(Ops, Duration, StoreName) ->
   FileName = StoreName ++ ".png",
   egd:save(egd:render(Im, png), FileName),
   egd:destroy(Im),
-  os:cmd("see " ++ FileName ++ " &"). % XXX
+  os:cmd("see " ++ FileName ++ " &"), % XXX
+  ok.
 
 
 %%% Internal functions

@@ -1,4 +1,4 @@
-.PHONY: all compile clean dialyzer start-zk start-riak \
+.PHONY: all compile clean dialyzer lint test start-zk start-riak \
   stop-zk stop-riak stop-all status-zk status-riak
 
 REBAR = $(shell pwd)/rebar3
@@ -10,11 +10,16 @@ compile:
 	
 clean:
 	$(REBAR) clean
+	rm -rf ./logs
 
 dialyzer:
 	$(REBAR) dialyzer
-	rm -rf ./logs
 
+lint:
+	$(REBAR) as lint lint
+
+test:
+	$(REBAR) as test eunit
 
 # Data store targets
 

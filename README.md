@@ -23,8 +23,6 @@ highlighting the violations of consistency models.
 
 ![Conver execution](http://i.imgur.com/BDGtpzX.png)
 
-Similar projects: [Jepsen][jepsen], [Hermitage][hermitage].  
-
 ## Getting started
 
 Once installed Erlang/OTP (R18+), to build Conver issue:
@@ -51,7 +49,9 @@ followed by a string that identifies the store under test
 
 For comparison, you can run a *traditional* property-based test suite
 on the dummy in-memory database using 
-[PropEr](http://proper.softlab.ntua.gr/) by issuing `./conver proper`.
+[PropEr](http://proper.softlab.ntua.gr/) by issuing `./conver proper`.  
+
+Similar projects: [Jepsen][jepsen], [Hermitage][hermitage].  
 
 ## Authors and license
 

@@ -50,8 +50,7 @@ main(Num, Store) ->
   TesterPids = proplists:get_all_values(ok, TesterRes),
   process_flag(trap_exit, true),
   lists:map(fun(X) -> erlang:monitor(process, X) end, TesterPids),
-  loop(Num, {StartTime, Store}),
-  erlang:halt(0).
+  loop(Num, {StartTime, Store}).
 
 
 %%% Internal functions

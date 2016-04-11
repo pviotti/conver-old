@@ -22,6 +22,10 @@
 
 -include("conver.hrl").
 
+-ifdef(TEST).
+-include_lib("eunit/include/eunit.hrl").
+-endif.
+
 -export([check_consistency/1]).
 
 
@@ -338,3 +342,22 @@ are_concurrent(Op1, Op2) ->
 cmp_opmedian(Op1, Op2) ->
   (Op1#op.start_time + Op1#op.end_time)/2 <
     (Op2#op.start_time + Op2#op.end_time)/2.
+
+
+%% ===================================================================
+%% EUnit tests
+%% ===================================================================
+-ifdef(TEST).
+
+cmp_so_test() ->
+  Op1 = #op{proc=proc1, start_time=0, end_time=10},
+  Op2 = #op{proc=proc1, start_time=11, end_time=25},
+  Op3 = #op{proc=proc2, start_time=3, end_time=6},
+  Op4 = #op{proc=proc1, start_time=1, end_time=8},
+  ?assert(cmp_so(Op1, Op2)),
+  ?assertNot(cmp_so(Op2, Op1)),
+  ?assert(cmp_so(Op4, Op2)),
+  ?assertNot(cmp_so(Op4, Op1)),
+  ?assertNot(cmp_so(Op3, Op2)).
+
+-endif.
