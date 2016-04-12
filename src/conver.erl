@@ -28,7 +28,15 @@
 
 %%% API
 
--spec main(pos_integer(), atom()) -> no_return().
+%% @doc Start a Conver test.
+%%
+%%      Runs a Conver test on the store identified by `Store'
+%%      spawning `Num' clients.
+%%
+%%      The configuration for the data store is read in the corresponding
+%%      proplist contained in `conver.conf'.
+%%
+-spec main(pos_integer(), atom()) -> ok.
 main(Num, Store) ->
   % Initialize utils
   application:set_env(lager, suppress_application_start_stop, true),

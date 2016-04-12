@@ -17,6 +17,17 @@
 %% under the License.
 %%
 %% -------------------------------------------------------------------
+%%
+%% @doc This module checks for consistency anomalies using an off-the-shelf property-based testing tool.
+%%
+%%      This module is a demonstrative attempt to use an off-the-shelf
+%%      property-based testing tool (i.e. PropEr) to check consistency models
+%%      implemented by a data store.
+%%
+%%      Given that the state of the data store is represented by a symbolic variable,
+%%      the only consistency models that can be checked are those that suppose
+%%      single-copy semantics, i.e. strong consistency models.
+%%
 
 -module(conver_statem).
 

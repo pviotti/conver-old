@@ -17,6 +17,12 @@
 %% under the License.
 %%
 %% -------------------------------------------------------------------
+%%
+%% @doc ZooKeeper Conver client.
+%%
+%%      This module implements the bindings required to test
+%%      ZooKeeper with Conver.
+%%
 
 -module(conver_client_zk).
 

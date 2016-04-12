@@ -17,6 +17,13 @@
 %% under the License.
 %%
 %% -------------------------------------------------------------------
+%%
+%% @doc Conver client behaviour.
+%%
+%%      This module provides the behaviour that
+%%      has to be implemented in order to make a data store client
+%%      supported by Conver.
+%%
 
 -module(conver_client).
 

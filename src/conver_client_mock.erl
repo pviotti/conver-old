@@ -17,6 +17,12 @@
 %% under the License.
 %%
 %% -------------------------------------------------------------------
+%%
+%% @doc Dummy in-memory data store.
+%%
+%%      This module implements a dummy in-memory data store
+%%      based on a ETS set. It is used for testing purposes.
+%%
 
 -module(conver_client_mock).
 

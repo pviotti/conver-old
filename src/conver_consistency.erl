@@ -17,6 +17,10 @@
 %% under the License.
 %%
 %% -------------------------------------------------------------------
+%%
+%% @doc This module contains the logic to check whether
+%%      an execution respects some given consistency models.
+%%
 
 -module(conver_consistency).
 
@@ -31,6 +35,15 @@
 
 %%% API
 
+%% @doc Check which consistency models are respected by an execution.
+%%
+%%      Takes as input parameter an array of tuples of operations (`Ops')
+%%      grouped by issuing process, and outputs to stdout the outcome
+%%      of the tests against various consistency models.
+%%      It returns an array of tuples having the same format and content of the
+%%      input parameter `Ops', in which each operation revealing a consistency
+%%      anomaly has been suitably marked.
+%%
 -spec check_consistency([{atom(), [op()]}]) -> [{atom(), [op()]}].
 check_consistency(Ops) ->
   Sessions = [lists:sort(fun cmp_rb/2, Session) || {_, Session} <- Ops],
@@ -79,6 +92,12 @@ check_consistency(Ops) ->
 %%% Utility generic functions
 %%%===================================================================
 
+%% @doc Builds and returns an array of tuples containing
+%%      the operations of the execution and having the same format
+%%      of the input parameter `Ops'.
+%%      In the returned array, each operation revealing a consistency anomaly
+%%      as marked in the corresponding vertices of the graph `G',
+%%      has been suitably marked.
 -spec build_checked_proplist(digraph:graph(), [{atom(), [op()]}]) ->
   [{atom(), [op()]}].
 build_checked_proplist(G, Ops) ->
@@ -101,6 +120,7 @@ print_bool(false) -> color:red("FAIL").
 
 %% Monotonic reads
 
+%% @doc Checks the Monotonic Read consistency guarantee.
 -spec check_monotonic_reads(digraph:graph(), [[op()]]) -> boolean().
 check_monotonic_reads(G, Sessions) ->
   [mark_mr_violations(G, #op{proc=init, type=write, arg=0}, Session) || Session <- Sessions],
@@ -137,6 +157,7 @@ mark_mr_violations(G, LastValueRead, [H|T]) when H#op.type == write ->
 
 %% Read-your-writes
 
+%% @doc Checks the Read-Your-Write consistency guarantee.
 -spec check_read_your_writes(digraph:graph(), [[op()]]) -> boolean().
 check_read_your_writes(G, Sessions) ->
   [mark_ryw_violations(G, #op{proc=init, type=write, arg=0}, Session) || Session <- Sessions],
@@ -163,6 +184,7 @@ mark_ryw_violations(G, _, [H|T]) when H#op.type == write ->
 
 
 %% Monotonic writes
+%% @doc Checks the Monotonic Writes consistency guarantee.
 -spec check_monotonic_writes(digraph:graph()) -> boolean().
 check_monotonic_writes(G) ->
   FunFilterWW = fun({V1, V2}) ->
@@ -174,6 +196,7 @@ check_monotonic_writes(G) ->
 
 
 %% Writes-follow-reads
+%% @doc Checks the Writes-Follow-Reads consistency guarantee.
 -spec check_writes_follow_reads(digraph:graph()) -> boolean().
 check_writes_follow_reads(G) ->
   FunFilterRW = fun({V1, V2}) ->
@@ -192,13 +215,15 @@ check_writes_follow_reads(G) ->
 
 
 %% Real-time
+%% @doc Checks the Real Time consistency guarantee.
 -spec check_real_time(digraph:graph()) -> boolean().
 check_real_time(G) ->
   is_subset(G, rb, ar).
 
 
 % RVal
-
+%% @doc Checks the RVAL consistency guarantee
+%%      (for a register, according to the speculative total ordering `ar').
 -spec check_rval(digraph:graph(), [op()]) -> boolean().
 check_rval(G, ArLst) ->
   mark_rval_violations(G, #op{proc=init, type=write, arg=0}, ArLst),
@@ -232,6 +257,9 @@ mark_rval_violations(G, _, [H|T]) when H#op.type == write ->
   mark_rval_violations(G, H, T).
 
 
+%% @doc Returns `true' or `false' depending on whether a specific
+%%      consistency model `Model` has been respected throughout the
+%%      execution represented by the graph `G'.
 -spec is_semantics_respected(digraph:graph(), atom()) -> boolean().
 is_semantics_respected(G, Model) ->
   lists:all(fun(X)->
@@ -245,6 +273,12 @@ is_semantics_respected(G, Model) ->
 %%% Functions to operate on graph entities
 %%%===================================================================
 
+%% @doc Adds edges to the execution graph `G' to represent
+%%      the relationships between operations (`O')
+%%      according to the specified comparison function `FunCmp'.
+%%      The added edges are labeled with `Label'.
+%%      If the edge is already part of the graph, the label gets
+%%      attached to the existing ones.
 -spec build_ordering([op()], digraph:graph(),
     fun((op(), op()) -> boolean()), atom()) -> [term()].
 build_ordering(O, G, FunCmp, Label) ->
@@ -262,26 +296,36 @@ add_label_to_edge(G, V1, V2, NewLabel) ->
   end.
 
 
+%% @doc Adds a label to a vertex of the execution graph
+%%      in order to mark that the operation associated to that vertex
+%%      violated a given consistency model identified by the label.
 -spec add_label_to_vertex(digraph:graph(), digraph:vertex(), atom()) -> digraph:vertex().
 add_label_to_vertex(G, V, NewLabel) ->
   {_, Label} = digraph:vertex(G, V),
   digraph:add_vertex(G, V, Label ++ [NewLabel]).
 
 
+%% @doc Gets all edges of the execution graph `G' that
+%%      express a certain relation (i.e., have a given label `Rel').
 -spec filter_edges_by_rel(digraph:graph(), atom()) -> [digraph:edge()].
 filter_edges_by_rel(G, Rel) ->
   lists:filter(fun(E) ->
-    {{_, _}, _, _, Label} = digraph:edge(G, E),
-    lists:member(Rel, Label)
+                {{_, _}, _, _, Label} = digraph:edge(G, E),
+                lists:member(Rel, Label)
                end,
     digraph:edges(G)).
 
 
+%% @doc Counts the edges of the execution graph `G' that
+%%      express a certain relation (i.e., have a given label `Rel').
 -spec count_edges(digraph:graph(), atom()) -> non_neg_integer().
 count_edges(G, Rel) ->
   length(filter_edges_by_rel(G, Rel)).
 
 
+%% @doc Determines whether all the edges expressing relation `Rel1'
+%%      are also expressing relation `Rel2' - hence, whether
+%%      `Rel1' is a subset of `Rel2'.
 -spec is_subset(digraph:graph(), atom(), atom()) -> boolean().
 is_subset(G, Rel1, Rel2) ->
   SetRel1 = sets:from_list(filter_edges_by_rel(G, Rel1)),
@@ -289,6 +333,8 @@ is_subset(G, Rel1, Rel2) ->
   sets:is_subset(SetRel1, SetRel2).
 
 
+%% @doc Gets all vertex which are in-neighbours of vertex `V'
+%%      (i.e. having an edge directed to `V') according to relation `Rel'.
 -spec get_in_neighbours_by_rel(digraph:graph(), digraph:vertex(), atom()) ->
   [digraph:vertex()].
 get_in_neighbours_by_rel(G, V, Rel) ->
@@ -303,21 +349,33 @@ get_in_neighbours_by_rel(G, V, Rel) ->
 %%% Functions to compare operations
 %%%===================================================================
 
+%% @doc Returns `true' if `Op1' precedes `Op2'
+%%      according to the session ordering (so); `false' otherwise.
 -spec cmp_so(op(), op()) -> boolean().
 cmp_so(Op1, Op2) ->
   Op1#op.proc == Op2#op.proc andalso
     Op1#op.end_time =< Op2#op.start_time.
 
+%% @doc Returns `true' if `Op1' precedes `Op2'
+%%      according to the returns-before ordering (rb); `false' otherwise.
 -spec cmp_rb(op(), op()) -> boolean().
 cmp_rb(Op1, Op2) ->
   Op1#op.end_time < Op2#op.start_time.
 
+%% @doc Returns `true' if `Op1' precedes `Op2'
+%%      according to the visibility ordering (vis); `false' otherwise.
 -spec cmp_vis(op(), op()) -> boolean().
 cmp_vis(Op1, Op2) ->
   Op1#op.type == write andalso
     Op2#op.type == read andalso
     Op1#op.arg == Op2#op.arg.
 
+%% @doc Returns `true' if `Op1' precedes `Op2'
+%%      in the arbitration speculative total ordering (ar); `false' otherwise.
+%%      This total ordering is built as a linear extension
+%%      of the returns-before partial ordering.
+%%      In case of concurrent operations, it arbitrarily uses parameters
+%%      of the operations to determine their ordering (i.e. process id, type, timing).
 -spec cmp_ar(op(), op()) -> boolean().
 cmp_ar(Op1, Op2) ->
   case are_concurrent(Op1, Op2) of
@@ -334,10 +392,14 @@ cmp_ar(Op1, Op2) ->
       end
   end.
 
+%% @doc Returns `true' if `Op1' and `Op2' are concurrent, i.e.
+%%      they are not ordered by the returns-before relation.
 -spec are_concurrent(op(), op()) -> boolean().
 are_concurrent(Op1, Op2) ->
   not cmp_rb(Op1, Op2) andalso not cmp_rb(Op2, Op1).
 
+%% @doc Returns `true' if `Op1' precedes `Op2'
+%%      according to their median time.
 -spec cmp_opmedian(op(), op()) -> boolean().
 cmp_opmedian(Op1, Op2) ->
   (Op1#op.start_time + Op1#op.end_time)/2 <

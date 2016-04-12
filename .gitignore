@@ -11,6 +11,7 @@ _*
 ebin
 log
 logs
+doc
 erl_crash.dump
 _build
 .eunit

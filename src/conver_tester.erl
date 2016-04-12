@@ -17,6 +17,14 @@
 %% under the License.
 %%
 %% -------------------------------------------------------------------
+%%
+%% @doc This module contains the logic that runs a single Conver tester,
+%%      which, in turn, is associated to a data store client
+%%      that actually invokes the required operations on the store.
+%%
+%%      The Conver tester implements the gen_server behavior
+%%      and uses a random timeout mechanism to interspace operations.
+%%
 
 -module(conver_tester).
 

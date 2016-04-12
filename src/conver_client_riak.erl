@@ -17,6 +17,12 @@
 %% under the License.
 %%
 %% -------------------------------------------------------------------
+%%
+%% @doc Riak Conver client.
+%%
+%%      This module implements the bindings required to test
+%%      Riak with Conver.
+%%
 
 -module(conver_client_riak).
 

@@ -17,6 +17,10 @@
 %% under the License.
 %%
 %% -------------------------------------------------------------------
+%%
+%% @doc This module is used to produce a graphical representation of
+%%      an execution.
+%%
 
 -module(conver_vis).
 
@@ -27,6 +31,15 @@
 
 %%% API
 
+%% @doc Draws the representation of the execution described in `Ops'.
+%%
+%%      The execution is represented in a canonical and straightforward way,
+%%      having an horizontal line for each process, and rectangles for the operations.
+%%      Consistency violations are highlighted as shades of red filling
+%%      the operations' rectangles.
+%%      The execution is drawn using the Egd module, and then written to a png file
+%%      named as the given `StoreName'.
+%%
 -spec draw_execution([{atom(), [op()]}], integer(), string()) -> term().
 draw_execution(Ops, Duration, StoreName) ->
   NProc = length(Ops),
