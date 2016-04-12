@@ -3,7 +3,7 @@
 
 function get_container_interface() {
   if_num=$(( $(docker exec $1 ip link show eth0 | head -1 | cut -d":" -f1) +1 ))
-  echo $(ip link | grep $if_num | cut -d":" -f2 | cut -d"@" -f1 | tr -d '[[:space:]]')
+  echo $(ip link | grep -e "^$if_num:" | cut -d":" -f2 | cut -d"@" -f1 | tr -d '[[:space:]]')
 }
 
 function apply_delay() {
