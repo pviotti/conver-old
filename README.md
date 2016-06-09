@@ -1,14 +1,18 @@
 # Con:heavy_check_mark:er [![Build Status](https://travis-ci.org/pviotti/conver.svg?branch=master)](https://travis-ci.org/pviotti/conver)
 
 Conver verifies implementations of the most common non-transactional consistency models.  
-
-Conver spawns client processes that perform concurrent reads
+It spawns client processes that perform concurrent reads
 and writes on the distributed store, and records their outcomes.
-Then it builds graph entities that express ordering and mutual visibility of operations.
+After the execution, it builds graph entities that express ordering 
+and mutual visibility of operations.
 Finally, it uses such graph entities to check consistency semantics
 defined as first-order logic predicates.  
 
 The approach implemented in Conver has been described in [this PaPoC 2016 paper][papoc].  
+
+**NOTE: this project is currently unmaintained. I decided to rewrite it in Scala for practical convenience.**
+**The [Scala version][scalav] features a linearizability checker (which this project lacks), and improved consistency checks.**
+
 
 ## Features
 
@@ -64,3 +68,4 @@ License: Apache 2.0.
  [jepsen]: http://jepsen.io
  [hermitage]: https://github.com/ept/hermitage
  [eurecom]: http://www.eurecom.fr
+ [scalav]: https://github.com/pviotti/conver-scala
